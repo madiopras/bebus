@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Routes\StoreRouteRequest;
 use App\Http\Requests\Routes\UpdateRouteRequest;
 use App\Models\Routes;
+use App\Models\Locations;
 use Illuminate\Http\Request;
 
 class RoutesController extends Controller
@@ -18,10 +19,14 @@ class RoutesController extends Controller
             $page = $request->query('page', 1);
 
             $routes = Routes::filterWithJoin($filters)->paginate($limit, ['*'], 'page', $page);
+            
+            // Ambil semua lokasi yang tersedia
+            $locations = Locations::select('id', 'name')->get();
 
             return response()->json([
                 'status' => true,
                 'data' => $routes->items(),
+                'locations' => $locations,
                 'current_page' => $routes->currentPage(),
                 'total_pages' => $routes->lastPage(),
                 'total_items' => $routes->total()
@@ -35,8 +40,14 @@ class RoutesController extends Controller
     {
         try {
             $route = Routes::findOrFail($id);
+            
+            // Ambil semua lokasi yang tersedia
+            $locations = Locations::select('id', 'name')->get();
 
-            return response()->json($route, 200);
+            return response()->json([
+                'route' => $route,
+                'locations' => $locations
+            ], 200);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Failed to fetch route', 'error' => $e->getMessage()], 500);
         }

@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\Master\LocationsController;
 use App\Http\Controllers\Admin\Master\RolesController;
 use App\Http\Controllers\Admin\Master\RoutesController;
 use App\Http\Controllers\Admin\Master\SpecialDaysController;
+use App\Http\Controllers\Admin\Master\FacilitiesController;
 use App\Http\Controllers\Admin\SchedulesController;
 use App\Http\Controllers\Admin\Master\UserRoleController;
 use App\Http\Controllers\Admin\Master\RoleManagementController;
@@ -30,7 +31,9 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::apiResource('roles', RolesController::class);
         Route::apiResource('classes', ClassesController::class);
         Route::apiResource('busses', BusesController::class);
+        Route::apiResource('specialdays', SpecialDaysController::class);
         Route::apiResource('locations', LocationsController::class);
+        Route::apiResource('facility', FacilitiesController::class);
         Route::apiResource('routes', RoutesController::class);
         Route::apiResource('sdays', SpecialDaysController::class);
         Route::apiResource('schedules', SchedulesController::class);

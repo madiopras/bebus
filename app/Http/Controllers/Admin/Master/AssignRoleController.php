@@ -227,8 +227,7 @@ class AssignRoleController extends Controller
         try {
             DB::beginTransaction();
 
-            $assignment = ModelHasRole::findOrFail($id);
-            $assignment->delete();
+            ModelHasRole::where('role_id', $id)->delete();
 
             DB::commit();
 
