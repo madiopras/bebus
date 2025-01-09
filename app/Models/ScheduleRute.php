@@ -26,16 +26,22 @@ class ScheduleRute extends Model
      */
     protected $fillable = [
         'schedule_id',
-        'route_id', // Sesuaikan dengan nama kolom yang benar
-        'sequence_route', // Sesuaikan dengan nama kolom yang benar
+        'route_id',
+        'sequence_route',
         'departure_time',
         'arrival_time',
         'price_rute',
-        'description',
         'is_active',
         'created_by_id',
-        'updated_by_id', // Tambahkan is_active jika ada di tabel
+        'updated_by_id',
     ];
+
+    /**
+     * The attributes that are nullable.
+     *
+     * @var array<string>
+     */
+    protected $nullable = ['description'];
 
     /**
      * The attributes that should be cast.
@@ -43,13 +49,14 @@ class ScheduleRute extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'sequence_route' => 'integer', // Sesuaikan dengan nama kolom yang benar
+        'sequence_route' => 'integer',
         'departure_time' => 'datetime:Y-m-d H:i:s',
         'arrival_time' => 'datetime:Y-m-d H:i:s',
         'price_rute' => 'float',
-        'is_active' => 'boolean', // Tambahkan casting untuk is_active
+        'is_active' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'description' => 'string'
     ];
 
     /**

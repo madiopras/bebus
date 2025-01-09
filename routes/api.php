@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\SchedulesController;
 use App\Http\Controllers\Admin\Master\UserRoleController;
 use App\Http\Controllers\Admin\Master\RoleManagementController;
 use App\Http\Controllers\Admin\Master\AssignRoleController;
+use App\Http\Controllers\Admin\ScheduleRuteController;
 
 // Register and Login
 Route::post('register', [AuthController::class, 'register']);
@@ -41,5 +42,11 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::apiResource('role-permissions', RoleManagementController::class);
         Route::apiResource('assign-roles', AssignRoleController::class);
         Route::apiResource('menus', \App\Http\Controllers\Admin\Master\MenusController::class);
+        Route::get('schedule-master', [App\Http\Controllers\Admin\Master\ScheduleMasterController::class, 'index']);
+        Route::get('schedule-master-update', [App\Http\Controllers\Admin\Master\ScheduleMasterController::class, 'update']);
+        Route::apiResource('schedule-rutes', ScheduleRuteController::class);
     });
+
+    // Schedule Master Data
+
 });
