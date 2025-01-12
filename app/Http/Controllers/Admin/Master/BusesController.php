@@ -8,6 +8,7 @@ use App\Http\Requests\Buses\StoreBusRequest;
 use App\Http\Requests\Buses\UpdateBusRequest;
 use App\Models\Buses;
 use App\Models\Seats;
+use App\Models\Classes;
 use Illuminate\Http\Request;
 
 class BusesController extends Controller
@@ -28,9 +29,13 @@ class BusesController extends Controller
                       ->filterBusesNotInSchedule($dateTime)
                       ->paginate($limit, ['*'], 'page', $page);
 
+        // Ambil semua kelas yang tersedia
+        $classes = Classes::select('id', 'class_name')->get();
+
         return response()->json([
             'status' => true,
             'data' => $buses->items(),
+            'classes' => $classes,
             'current_page' => $buses->currentPage(),
             'total_pages' => $buses->lastPage(),
             'total_items' => $buses->total()
@@ -44,8 +49,21 @@ class BusesController extends Controller
     {
         try {
             $bus = Buses::findOrFail($id);
+            
+            // Ambil semua kelas yang tersedia
+            $classes = Classes::select('id', 'class_name')->get();
 
-            return response()->json($bus, 200);
+            // Ambil nomor kursi yang tidak aktif
+            $notUsedSeats = Seats::where('bus_id', $id)
+                                ->where('is_active', false)
+                                ->pluck('seat_number')
+                                ->implode(',');
+
+            return response()->json([
+                'bus' => $bus,
+                'classes' => $classes,
+                'not_used' => $notUsedSeats
+            ], 200);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Failed to fetch bus', 'error' => $e->getMessage()], 500);
         }
@@ -69,10 +87,14 @@ class BusesController extends Controller
             'updated_by_id' => $request->user()->id,
         ]);
 
+        // Convert not_used string to array
+        $notUsedSeats = $request->not_used ? explode(',', $request->not_used) : [];
+
         for ($i = 1; $i <= $request->capacity; $i++) {
             Seats::create([
                 'bus_id' => $bus->id,
                 'seat_number' => $i,
+                'is_active' => !in_array($i, $notUsedSeats),
                 'created_by_id' => $request->user()->id,
                 'updated_by_id' => $request->user()->id,
             ]);
@@ -109,11 +131,15 @@ public function update(UpdateBusRequest $request, $id)
         // Hapus kursi lama
         Seats::where('bus_id', $bus->id)->delete();
 
+        // Convert not_used string to array
+        $notUsedSeats = $request->not_used ? explode(',', $request->not_used) : [];
+
         // Buat kursi baru berdasarkan kapasitas bus yang baru
         for ($i = 1; $i <= $request->capacity; $i++) {
             Seats::create([
                 'bus_id' => $bus->id,
                 'seat_number' => $i,
+                'is_active' => !in_array($i, $notUsedSeats),
                 'created_by_id' => $request->user()->id,
                 'updated_by_id' => $request->user()->id,
             ]);

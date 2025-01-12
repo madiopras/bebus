@@ -19,7 +19,7 @@ class StoreSchedulesRequest extends FormRequest
             'supir_id' => 'required|integer',
             'departure_time' => 'required|date',
             'arrival_time' => 'required|date',
-            'description' => 'required|string|max:255'
+            'description' => 'nullable|string|max:255'
         ];
     }
 }

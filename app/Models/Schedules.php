@@ -24,10 +24,16 @@ class Schedules extends Model
         'supir_id',
         'departure_time',
         'arrival_time',
-        'description',
         'created_by_id',
         'updated_by_id',
     ];
+
+    /**
+     * The attributes that are nullable.
+     *
+     * @var array<string>
+     */
+    protected $nullable = ['description'];
 
     /**
      * The attributes that should be cast.
@@ -39,6 +45,7 @@ class Schedules extends Model
         'arrival_time' => 'datetime:Y-m-d H:i:s',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'description' => 'string'
     ];
 
     /**

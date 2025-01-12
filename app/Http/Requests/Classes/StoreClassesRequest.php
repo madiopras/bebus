@@ -24,13 +24,8 @@ class StoreClassesRequest extends FormRequest
         return [
             'class_name' => 'required|string|max:255',
             'description' => 'required|string|max:255',
-            'has_ac' => 'required|boolean',
-            'has_toilet' => 'required|boolean',
-            'has_tv' => 'required|boolean',
-            'has_music' => 'required|boolean',
-            'has_air_mineral' => 'required|boolean',
-            'has_wifi' => 'required|boolean',
-            'has_snack' => 'required|boolean',
+            'facilities' => 'array',
+            'facilities.*' => 'exists:facilities,id'
         ];
     }
 }

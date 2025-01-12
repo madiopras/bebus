@@ -19,7 +19,7 @@ class UpdateSchedulesRequest extends FormRequest
             'supir_id' => 'sometimes|required|integer',
             'departure_time' => 'sometimes|required|date',
             'arrival_time' => 'sometimes|required|date',
-            'description' => 'sometimes|required|string|max:255'
+            'description' => 'nullable|string|max:255'
         ];
     }
 }
