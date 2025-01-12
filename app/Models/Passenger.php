@@ -12,6 +12,13 @@ class Passenger extends Model
     use HasApiTokens, HasFactory, Notifiable;
 
     /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
+    protected $table = 'passengers';
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>
@@ -20,6 +27,7 @@ class Passenger extends Model
         'booking_id',
         'schedule_seat_id',
         'name',
+        'gender',
         'phone_number',
         'description',
         'created_by_id',
@@ -54,6 +62,9 @@ class Passenger extends Model
         if (isset($filters['name'])) {
             $query->where('name', 'like', '%' . $filters['name'] . '%');
         }
+        if (isset($filters['gender'])) {
+            $query->where('gender', $filters['gender']);
+        }
         if (isset($filters['phone_number'])) {
             $query->where('phone_number', 'like', '%' . $filters['phone_number'] . '%');
         }
@@ -73,7 +84,7 @@ class Passenger extends Model
      */
     public function booking()
     {
-        return $this->belongsTo(Booking::class, 'booking_id');
+        return $this->belongsTo(Bookings::class, 'booking_id');
     }
 
     /**

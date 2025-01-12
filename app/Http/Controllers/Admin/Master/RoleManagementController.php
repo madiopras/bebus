@@ -22,9 +22,9 @@ class RoleManagementController extends Controller
                 ->join('role_has_permissions', 'roles.id', '=', 'role_has_permissions.role_id')
                 ->leftJoin('permissions', 'permissions.id', '=', 'role_has_permissions.permission_id')
                 ->with(['permissions'])
-                ->distinct()
+                ->distinct('roles.id')
                 ->filter($filters)
-                ->paginate($limit, ['*'], 'page', $page);
+                ->paginate($limit, ['roles.*'], 'page', $page);
 
             $menus = Menu::all();
             

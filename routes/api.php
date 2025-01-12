@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\Master\UserRoleController;
 use App\Http\Controllers\Admin\Master\RoleManagementController;
 use App\Http\Controllers\Admin\Master\AssignRoleController;
 use App\Http\Controllers\Admin\ScheduleRuteController;
+use App\Http\Controllers\Admin\BookingProcessController;
 
 // Register and Login
 Route::post('register', [AuthController::class, 'register']);
@@ -44,7 +45,9 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::apiResource('menus', \App\Http\Controllers\Admin\Master\MenusController::class);
         Route::get('schedule-master', [App\Http\Controllers\Admin\Master\ScheduleMasterController::class, 'index']);
         Route::get('schedule-master-update', [App\Http\Controllers\Admin\Master\ScheduleMasterController::class, 'update']);
+        Route::get('schedule-rutes/{id}/seat', [ScheduleRuteController::class, 'getSeats']);
         Route::apiResource('schedule-rutes', ScheduleRuteController::class);
+        Route::post('/booking-proses', [BookingProcessController::class, 'store']);
     });
 
     // Schedule Master Data

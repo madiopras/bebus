@@ -96,15 +96,15 @@ class SchedulesController extends Controller
     public function index(Request $request)
     {
         try {
-            $filters = $request->only(['name', 'departure_time', 'bus_number', 'class_name', 'type_bus', 'bus_name', 'is_active']);
+            $filters = $request->only(['name', 'departure_time', 'bus_number', 'class_name', 'type_bus', 'nama_bus', 'is_active', 'tanggal_dari', 'tanggal_sampai', 'supir_name']);
             $limit = $request->query('limit', 10);
             $page = $request->query('page', 1);
 
             $query = Schedules::select(
                 'schedules.id',
                 'locations.name as lokasi_schedule',
-                \DB::raw("DATE_FORMAT(schedules.departure_time, '%d %M %Y') as tanggal_berangkat"),
-                \DB::raw("DATE_FORMAT(schedules.departure_time, '%H:%i') as jam"),
+                DB::raw("DATE_FORMAT(schedules.departure_time, '%d %M %Y') as tanggal_berangkat"),
+                DB::raw("DATE_FORMAT(schedules.departure_time, '%H:%i') as jam"),
                 'buses.bus_number',
                 'buses.bus_name as nama_bus',
                 'buses.type_bus',
@@ -122,11 +122,19 @@ class SchedulesController extends Controller
             if (isset($filters['departure_time'])) {
                 $query->whereDate('schedules.departure_time', $filters['departure_time']);
             }
+            if (isset($filters['tanggal_dari']) && isset($filters['tanggal_sampai'])) {
+                $query->whereDate('schedules.departure_time', '>=', $filters['tanggal_dari'])
+                      ->whereDate('schedules.departure_time', '<=', $filters['tanggal_sampai']);
+            } else if (isset($filters['tanggal_dari'])) {
+                $query->whereDate('schedules.departure_time', '>=', $filters['tanggal_dari']);
+            } else if (isset($filters['tanggal_sampai'])) {
+                $query->whereDate('schedules.departure_time', '<=', $filters['tanggal_sampai']);
+            }
             if (isset($filters['bus_number'])) {
                 $query->where('buses.bus_number', 'like', '%' . $filters['bus_number'] . '%');
             }
-            if (isset($filters['bus_name'])) {
-                $query->where('buses.bus_name', 'like', '%' . $filters['bus_name'] . '%');
+            if (isset($filters['nama_bus'])) {
+                $query->where('buses.bus_name', 'like', '%' . $filters['nama_bus'] . '%');
             }
             if (isset($filters['type_bus'])) {
                 $query->where('buses.type_bus', 'like', '%' . $filters['type_bus'] . '%');
@@ -136,6 +144,9 @@ class SchedulesController extends Controller
             }
             if (isset($filters['is_active'])) {
                 $query->where('schedules.is_active', $filters['is_active']);
+            }
+            if (isset($filters['supir_name'])) {
+                $query->where('users.name', 'like', '%' . $filters['supir_name'] . '%');
             }
 
             $schedules = $query->paginate($limit, ['*'], 'page', $page);
