@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreBookingRequest;
 use App\Http\Requests\UpdateBookingRequest;
-use App\Models\Booking;
+use App\Models\Bookings;
 use Illuminate\Http\Request;
 
 class BookingsController extends Controller
@@ -17,7 +17,7 @@ class BookingsController extends Controller
             $limit = $request->query('limit', 10);
             $page = $request->query('page', 1);
 
-            $bookings = Booking::filter($filters)->paginate($limit, ['*'], 'page', $page);
+            $bookings = Bookings::filter($filters)->paginate($limit, ['*'], 'page', $page);
 
             return response()->json([
                 'status' => true,
@@ -34,7 +34,7 @@ class BookingsController extends Controller
     public function show($id)
     {
         try {
-            $booking = Booking::findOrFail($id);
+            $booking = Bookings::findOrFail($id);
 
             return response()->json($booking, 200);
         } catch (\Exception $e) {
@@ -45,7 +45,7 @@ class BookingsController extends Controller
     public function store(StoreBookingRequest $request)
     {
         try {
-            $booking = Booking::create([
+            $booking = Bookings::create([
                 'user_id' => $request->user_id,
                 'schedule_id' => $request->schedule_id,
                 'booking_date' => $request->booking_date,
@@ -66,7 +66,7 @@ class BookingsController extends Controller
 
     public function update(UpdateBookingRequest $request, $id)
     {
-        $booking = Booking::find($id);
+        $booking = Bookings::find($id);
 
         if (!$booking) {
             return response()->json(['message' => 'Booking not found'], 404);
@@ -87,7 +87,7 @@ class BookingsController extends Controller
     public function destroy($id)
     {
         try {
-            $booking = Booking::find($id);
+            $booking = Bookings::find($id);
 
             if (!$booking) {
                 return response()->json(['message' => 'Booking not found'], 404);

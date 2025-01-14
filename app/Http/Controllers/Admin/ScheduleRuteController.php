@@ -24,14 +24,19 @@ class ScheduleRuteController extends Controller
                     DB::raw("DATE_FORMAT(sr.arrival_time, '%Y-%m-%d %H:%i:%s') as arrival_time"),
                     'sr.is_active',
                     'l.name as dari',
+                    'l.place as dari_shelter',
+                    'l.id as dari_id',
                     'l2.name as ke',
+                    'l2.place as ke_shelter',
+                    'l2.id as ke_id',
                     'sr.price_rute',
                     'b.bus_number as kode_bus',
                     'b.bus_name as nama_bus',
                     'b.type_bus as tipe_bus',
                     'c.class_name as kelas_bus',
                     'u.name as supir',
-                    DB::raw('(SELECT COUNT(*) FROM seats WHERE bus_id = b.id AND is_active = 1) as total_seats')
+                    DB::raw('(SELECT COUNT(*) FROM seats WHERE bus_id = b.id AND is_active = 1 and id not in (select p.schedule_seat_id from passengers p left join bookings b on  p.booking_id = b.id where b.schedule_id = sr.id)) as total_seats'),
+                    DB::raw('GROUP_CONCAT(DISTINCT f.name ORDER BY f.name ASC SEPARATOR ", ") as name_facilities')
                 )
                 ->leftJoin('schedule_rute as sr', 's.id', '=', 'sr.schedule_id')
                 ->join('routes as r', 'r.id', '=', 'sr.route_id')
@@ -40,7 +45,30 @@ class ScheduleRuteController extends Controller
                 ->leftJoin('buses as b', 's.bus_id', '=', 'b.id')
                 ->leftJoin('users as u', 's.supir_id', '=', 'u.id')
                 ->leftJoin('classes as c', 'b.class_id', '=', 'c.id')
-                ->where('s.departure_time', '>', now());
+                ->leftJoin('class_facilities as cf', 'c.id', '=', 'cf.class_id')
+                ->leftJoin('facilities as f', 'cf.facility_id', '=', 'f.id')
+                ->where('sr.departure_time', '>=', now())
+                ->groupBy(
+                    'sr.schedule_id',
+                    'sr.id',
+                    'sr.departure_time',
+                    'sr.arrival_time',
+                    'sr.is_active',
+                    'l.name',
+                    'l.id',
+                    'l2.name',
+                    'l2.id',
+                    'sr.price_rute',
+                    'b.bus_number',
+                    'b.bus_name',
+                    'b.type_bus',
+                    'c.id',
+                    'c.class_name',
+                    'u.name',
+                    'b.id',
+                    'l2.place',
+                    'l.place'
+                );
 
             // Apply filters
             if ($request->has('departure_start')) {
@@ -165,7 +193,8 @@ class ScheduleRuteController extends Controller
                     'b2.bus_name',
                     'b2.capacity',
                     'c.class_name',
-                    'b2.cargo'
+                    'b2.cargo',
+                    DB::raw('(SELECT COUNT(*) FROM seats WHERE bus_id = b2.id AND is_active = 1 and id not in (select p.schedule_seat_id from passengers p left join bookings b on p.booking_id = sr.id)) as total_seats')
                 )
                 ->join('schedules as s', 'sr.schedule_id', '=', 's.id')
                 ->join('buses as b2', 's.bus_id', '=', 'b2.id')
@@ -177,22 +206,25 @@ class ScheduleRuteController extends Controller
             $seats = DB::table('seats as s2')
                 ->select(
                     's2.seat_number',
-                    DB::raw('CASE 
+                    DB::raw('MAX(CASE 
                         WHEN s2.is_active = 0 THEN "R"
                         ELSE COALESCE(p.gender, NULL)
-                    END as gender')
+                    END) as gender')
                 )
                 ->join('buses as b2', 's2.bus_id', '=', 'b2.id')
                 ->join('schedules as s', 'b2.id', '=', 's.bus_id')
                 ->join('schedule_rute as sr', 's.id', '=', 'sr.schedule_id')
-                ->leftJoin('bookings as b', 'b.schedule_id', '=', 'sr.id')
+                ->leftJoin('bookings as b', function($join) {
+                    $join->on('b.schedule_id', '=', 'sr.id')
+                         ->where('b.payment_status', '!=', 'CANCELLED');
+                })
                 ->leftJoin('passengers as p', function($join) {
                     $join->on('b.id', '=', 'p.booking_id')
                          ->on('s2.id', '=', 'p.schedule_seat_id');
                 })
                 ->where('sr.id', $id)
+                ->groupBy('s2.seat_number')
                 ->orderBy('s2.seat_number')
-                ->distinct()
                 ->get();
 
             if ($seats->isEmpty()) {

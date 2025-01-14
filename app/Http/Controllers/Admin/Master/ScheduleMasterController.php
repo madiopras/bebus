@@ -8,6 +8,7 @@ use App\Models\Buses;
 use App\Models\User;
 use App\Models\Routes;
 use App\Models\SpecialDays;
+use App\Models\Facility;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -64,6 +65,11 @@ class ScheduleMasterController extends Controller
             // Get Special Days with start_date greater than today
             $specialDays = SpecialDays::where('start_date', '>', now())->get();
 
+            // Get Facilities
+            $facilities = DB::table('facilities')
+                ->select('id', 'name')
+                ->get();
+
             return response()->json([
                 'status' => true,
                 'data' => [
@@ -71,7 +77,8 @@ class ScheduleMasterController extends Controller
                     'buses' => $buses,
                     'drivers' => $drivers,
                     'routes' => $routes,
-                    'special_days' => $specialDays
+                    'special_days' => $specialDays,
+                    'facilities' => $facilities
                 ]
             ], 200);
         } catch (\Exception $e) {
