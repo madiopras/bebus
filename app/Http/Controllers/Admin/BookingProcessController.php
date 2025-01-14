@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Validator;
+use App\Models\Payments;
 
 class BookingProcessController extends Controller
 {
@@ -28,6 +29,8 @@ class BookingProcessController extends Controller
             'passengers.*.name' => 'required|string|max:255',
             'passengers.*.phone' => 'nullable|string|max:20',
             'passengers.*.gender' => 'required|in:L,P',
+            'payment_method' => 'required|string|in:TUNAI,TRANSFER',
+            'customer_type' => 'required|string|in:ADMIN,CUSTOMER'
         ]);
 
         if ($validator->fails()) {
@@ -57,7 +60,8 @@ class BookingProcessController extends Controller
                 'payment_status' => 'UNPAID',
                 'final_price' => $totalPrice,
                 'created_by_id' => $request->user() ? $request->user()->id : null,
-                'updated_by_id' => $request->user() ? $request->user()->id : null
+                'updated_by_id' => $request->user() ? $request->user()->id : null,
+                'customer_type' => $request->customer_type
             ]);
 
             // Simpan data penumpang
@@ -90,6 +94,24 @@ class BookingProcessController extends Controller
                     'gender' => $passenger['gender'],
                     'created_by_id' => $request->user() ? $request->user()->id : null,
                     'updated_by_id' => $request->user() ? $request->user()->id : null
+                ]);
+            }
+
+            // Jika metode pembayaran TUNAI, buat record payment
+            if ($request->payment_method === 'TUNAI') {
+                $payment = Payments::create([
+                    'booking_id' => $booking->id,
+                    'payment_method' => $request->payment_method,
+                    'payment_date' => Carbon::now(),
+                    'amount' => $totalPrice,
+                    'created_by_id' => $request->user() ? $request->user()->id : null,
+                    'updated_by_id' => $request->user() ? $request->user()->id : null
+                ]);
+
+                // Update payment_id dan status pembayaran pada booking
+                $booking->update([
+                    'payment_id' => $payment->id,
+                    'payment_status' => 'PAID'
                 ]);
             }
 

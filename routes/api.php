@@ -16,10 +16,18 @@ use App\Http\Controllers\Admin\Master\RoleManagementController;
 use App\Http\Controllers\Admin\Master\AssignRoleController;
 use App\Http\Controllers\Admin\ScheduleRuteController;
 use App\Http\Controllers\Admin\BookingProcessController;
+use App\Http\Controllers\Admin\PaymentsController;
+use App\Http\Controllers\Admin\BookingTransferController;
 
 // Register and Login
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
+
+// Midtrans Callback Routes (No Auth Required)
+Route::post('/midtrans/notification', [BookingTransferController::class, 'handlePaymentNotification']);
+Route::get('/midtrans/finish', [BookingTransferController::class, 'handlePaymentFinish']);
+Route::get('/midtrans/unfinish', [BookingTransferController::class, 'handlePaymentUnfinish']);
+Route::get('/midtrans/error', [BookingTransferController::class, 'handlePaymentError']);
 
 Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     // Logout
@@ -48,8 +56,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::get('schedule-rutes/{id}/seat', [ScheduleRuteController::class, 'getSeats']);
         Route::apiResource('schedule-rutes', ScheduleRuteController::class);
         Route::post('/booking-proses', [BookingProcessController::class, 'store']);
+        Route::post('/booking-transfer', [BookingTransferController::class, 'store']);
+        Route::post('payment', [PaymentsController::class, 'createTransaction']);
     });
-
-    // Schedule Master Data
-
 });

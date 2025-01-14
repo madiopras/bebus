@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-class Payment extends Model
+class Payments extends Model
 {
     use HasApiTokens, HasFactory, Notifiable;
 
@@ -75,7 +75,7 @@ class Payment extends Model
      */
     public function booking()
     {
-        return $this->belongsTo(Booking::class, 'booking_id');
+        return $this->belongsTo(Bookings::class, 'booking_id');
     }
 
     /**
