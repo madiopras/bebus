@@ -31,6 +31,7 @@ class ScheduleRute extends Model
         'departure_time',
         'arrival_time',
         'price_rute',
+        'description',
         'is_active',
         'created_by_id',
         'updated_by_id',

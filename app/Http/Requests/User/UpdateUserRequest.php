@@ -14,7 +14,7 @@ class UpdateUserRequest extends FormRequest
             'password' => 'sometimes|string|min:8',
             'phone_number' => 'nullable|string|max:20',
             'gender' => 'nullable|string|max:10',
-            'role' => 'sometimes|string|max:255',
+            'role' => 'nullable|string|max:255',
             'is_active' => 'sometimes|boolean',
         ];
     }

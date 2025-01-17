@@ -29,7 +29,7 @@ class BookingProcessController extends Controller
             'passengers.*.name' => 'required|string|max:255',
             'passengers.*.phone' => 'nullable|string|max:20',
             'passengers.*.gender' => 'required|in:L,P',
-            'payment_method' => 'required|string|in:TUNAI,TRANSFER',
+            'payment_method' => 'required|string|in:TUNAI,TRANSFER,WHATSAPP',
             'customer_type' => 'required|string|in:ADMIN,CUSTOMER'
         ]);
 
@@ -49,6 +49,9 @@ class BookingProcessController extends Controller
             // Hitung total harga
             $totalPrice = count($request->passengers) * $scheduleRute->price_rute;
 
+            // Set customer_type berdasarkan role
+            $customerType = $request->user()->hasRole('user') ? 'CUSTOMER' : 'ADMIN';
+
             // Buat booking baru
             $booking = Bookings::create([
                 'user_id' => $request->user()->id,
@@ -61,7 +64,7 @@ class BookingProcessController extends Controller
                 'final_price' => $totalPrice,
                 'created_by_id' => $request->user() ? $request->user()->id : null,
                 'updated_by_id' => $request->user() ? $request->user()->id : null,
-                'customer_type' => $request->customer_type
+                'customer_type' => $customerType
             ]);
 
             // Simpan data penumpang
@@ -86,7 +89,7 @@ class BookingProcessController extends Controller
                     throw new \Exception('Kursi ' . $passenger['seat_number'] . ' sudah dipesan');
                 }
 
-                Passenger::create([
+                $passenger = Passenger::create([
                     'booking_id' => $booking->id,
                     'schedule_seat_id' => $seat->id,
                     'name' => $passenger['name'],
@@ -95,10 +98,27 @@ class BookingProcessController extends Controller
                     'created_by_id' => $request->user() ? $request->user()->id : null,
                     'updated_by_id' => $request->user() ? $request->user()->id : null
                 ]);
+
+                // Tambahkan data ke scheduleseats
+                \App\Models\ScheduleSeats::create([
+                    'schedule_id' => $scheduleRute->schedule_id,
+                    'booking_Id' => $booking->id,
+                    'seat_id' => $seat->id,
+                    'schedule_rute_id' => $scheduleRute->id,
+                    'passengers_id' => $passenger->id,
+                    'is_available' => 0, // 0 karena sedang dipesan
+                    'description' => 'Kursi dipesan oleh ' . $passenger['name'],
+                    'created_by_id' => $request->user() ? $request->user()->id : null,
+                    'updated_by_id' => $request->user() ? $request->user()->id : null
+                ]);
             }
 
             // Jika metode pembayaran TUNAI, buat record payment
             if ($request->payment_method === 'TUNAI') {
+                // Generate payment ID untuk TUNAI
+                $randomNumber = str_pad(mt_rand(1, 9999999999), 10, '0', STR_PAD_LEFT);
+                $paymentId = 'TUNAI-' . $booking->id . '-' . $randomNumber;
+
                 $payment = Payments::create([
                     'booking_id' => $booking->id,
                     'payment_method' => $request->payment_method,
@@ -110,7 +130,7 @@ class BookingProcessController extends Controller
 
                 // Update payment_id dan status pembayaran pada booking
                 $booking->update([
-                    'payment_id' => $payment->id,
+                    'payment_id' => $paymentId,
                     'payment_status' => 'PAID'
                 ]);
             }
@@ -132,4 +152,5 @@ class BookingProcessController extends Controller
             ], 500);
         }
     }
+    
 } 

@@ -18,7 +18,8 @@ use App\Http\Controllers\Admin\ScheduleRuteController;
 use App\Http\Controllers\Admin\BookingProcessController;
 use App\Http\Controllers\Admin\PaymentsController;
 use App\Http\Controllers\Admin\BookingTransferController;
-
+use App\Http\Controllers\Admin\BookingsController;
+use App\Http\Controllers\Admin\OrderController;
 // Register and Login
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
@@ -54,9 +55,14 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::get('schedule-master', [App\Http\Controllers\Admin\Master\ScheduleMasterController::class, 'index']);
         Route::get('schedule-master-update', [App\Http\Controllers\Admin\Master\ScheduleMasterController::class, 'update']);
         Route::get('schedule-rutes/{id}/seat', [ScheduleRuteController::class, 'getSeats']);
+        Route::get('schedule-rute/manifest/{scheduleId}', [ScheduleRuteController::class, 'getManifest']);
         Route::apiResource('schedule-rutes', ScheduleRuteController::class);
         Route::post('/booking-proses', [BookingProcessController::class, 'store']);
         Route::post('/booking-transfer', [BookingTransferController::class, 'store']);
         Route::post('payment', [PaymentsController::class, 'createTransaction']);
+        Route::get('check-payment', [BookingsController::class, 'index']);
+        Route::get('check-payment/{id}', [BookingsController::class, 'show']);
+        Route::apiResource('orders', OrderController::class);
+        Route::post('orders/{id}/cancel', [OrderController::class, 'cancelBooking']);
     });
 });

@@ -30,6 +30,9 @@ class Bookings extends Model
         'description',
         'created_by_id',
         'updated_by_id',
+        'payment_id',
+        'redirect_url',
+        'customer_type',
     ];
 
     /**
@@ -42,6 +45,7 @@ class Bookings extends Model
         'final_price' => 'decimal:2',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'payment_id' => 'string'
     ];
 
     /**

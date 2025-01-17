@@ -68,12 +68,6 @@ class User extends Authenticatable
         if (isset($filters['gender'])) {
             $query->where('gender', 'like', '%' . $filters['gender'] . '%');
         }
-        if (isset($filters['role'])) {
-            // Filter berdasarkan role menggunakan relasi roles dari Spatie
-            $query->whereHas('roles', function ($query) use ($filters) {
-                $query->where('name', 'like', '%' . $filters['role'] . '%');
-            });
-        }
         if (isset($filters['is_active'])) {
             $isActiveValue = $filters['is_active'] === 'true' ? 1 : ($filters['is_active'] === 'false' ? 0 : '');
             $query->where('is_active', $isActiveValue);

@@ -45,6 +45,8 @@ class BookingsController extends Controller
     public function store(StoreBookingRequest $request)
     {
         try {
+            $customerType = $request->user()->hasRole('user') ? 'CUSTOMER' : 'ADMIN';
+
             $booking = Bookings::create([
                 'user_id' => $request->user_id,
                 'schedule_id' => $request->schedule_id,
@@ -56,6 +58,7 @@ class BookingsController extends Controller
                 'description' => $request->description,
                 'created_by_id' => $request->user()->id,
                 'updated_by_id' => $request->user()->id,
+                'customer_type' => $customerType,
             ]);
 
             return response()->json(['message' => 'Booking created successfully', 'booking' => $booking], 201);
@@ -73,7 +76,12 @@ class BookingsController extends Controller
         }
 
         try {
-            $booking->update($request->only(['user_id', 'schedule_id', 'booking_date', 'payment_status', 'final_price', 'voucher_id', 'specialdays_id', 'description']));
+            $customerType = $request->user()->hasRole('user') ? 'CUSTOMER' : 'ADMIN';
+
+            $booking->update(array_merge(
+                $request->only(['user_id', 'schedule_id', 'booking_date', 'payment_status', 'final_price', 'voucher_id', 'specialdays_id', 'description']),
+                ['customer_type' => $customerType]
+            ));
 
             $booking->updated_by_id = $request->user()->id;
             $booking->save();

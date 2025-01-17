@@ -26,6 +26,7 @@ class CreateBookingsTable extends Migration
             $table->integer('created_by_id');
             $table->timestamps();
             $table->integer('updated_by_id')->nullable();
+            $table->enum('customer_type', ['ADMIN', 'CUSTOMER'])->default('CUSTOMER');
         });
     }
 
