@@ -16,6 +16,7 @@ class CreateScheduleseatsTable extends Migration
         Schema::create('scheduleseats', function (Blueprint $table) {
             $table->id('id');
             $table->integer('schedule_id');
+            $table->string('booking_id');
             $table->integer('seat_id');
             $table->boolean('is_available');
             $table->string('description');
