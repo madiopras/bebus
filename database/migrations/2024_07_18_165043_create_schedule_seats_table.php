@@ -18,6 +18,8 @@ class CreateScheduleseatsTable extends Migration
             $table->integer('schedule_id');
             $table->string('booking_id');
             $table->integer('seat_id');
+            $table->integer('schedule_rute_id');
+            $table->integer('passangers_id');
             $table->boolean('is_available');
             $table->string('description');
             $table->integer('created_by_id');
