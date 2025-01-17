@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ScheduleRute;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ScheduleRuteController extends Controller
 {
@@ -35,7 +36,7 @@ class ScheduleRuteController extends Controller
                     'b.type_bus as tipe_bus',
                     'c.class_name as kelas_bus',
                     'u.name as supir',
-                    DB::raw('(SELECT COUNT(*) FROM seats WHERE bus_id = b.id AND is_active = 1 and id not in (select p.schedule_seat_id from passengers p left join bookings b on  p.booking_id = b.id where b.schedule_id = sr.id)) as total_seats'),
+                    DB::raw('(SELECT COUNT(*) FROM seats WHERE bus_id = b.id AND is_active = 1 and id not in (select p.schedule_seat_id from passengers p left join bookings b on  p.booking_id = b.id where b.schedule_id = sr.id and b.payment_status != "CANCELLED")) as total_seats'),
                     DB::raw('GROUP_CONCAT(DISTINCT f.name ORDER BY f.name ASC SEPARATOR ", ") as name_facilities')
                 )
                 ->leftJoin('schedule_rute as sr', 's.id', '=', 'sr.schedule_id')
@@ -194,7 +195,7 @@ class ScheduleRuteController extends Controller
                     'b2.capacity',
                     'c.class_name',
                     'b2.cargo',
-                    DB::raw('(SELECT COUNT(*) FROM seats WHERE bus_id = b2.id AND is_active = 1 and id not in (select p.schedule_seat_id from passengers p left join bookings b on p.booking_id = sr.id)) as total_seats')
+                    DB::raw('(SELECT COUNT(*) FROM seats WHERE bus_id = b2.id AND is_active = 1 and id not in (select p.schedule_seat_id from passengers p left join bookings b on p.booking_id = sr.id and b.payment_status != "CANCELLED")) as total_seats')
                 )
                 ->join('schedules as s', 'sr.schedule_id', '=', 's.id')
                 ->join('buses as b2', 's.bus_id', '=', 'b2.id')
@@ -246,6 +247,148 @@ class ScheduleRuteController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Gagal mengambil data kursi',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getManifest($scheduleId)
+    {
+        try {
+            // Ambil schedule berdasarkan ID
+            $schedule = \App\Models\Schedules::with('scheduleRutes')
+                ->find($scheduleId);
+
+            if (!$schedule) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Data schedule tidak ditemukan'
+                ], 404);
+            }
+
+            $result = [];
+            foreach ($schedule->scheduleRutes as $scheduleRute) {
+                // Ambil detail rute
+                $rute = DB::table('schedule_rute as sr')
+                    ->select(
+                        'sr.id as schedule_rute_id',
+                        'sr.route_id',
+                        'sr.departure_time',
+                        'sr.arrival_time',
+                        'sr.price_rute',
+                        'r.start_location_id',
+                        'r.end_location_id',
+                        'l1.name as start_location',
+                        'l2.name as end_location',
+                        'r.distance'
+                    )
+                    ->join('routes as r', 'sr.route_id', '=', 'r.id')
+                    ->join('locations as l1', 'r.start_location_id', '=', 'l1.id')
+                    ->join('locations as l2', 'r.end_location_id', '=', 'l2.id')
+                    ->where('sr.id', $scheduleRute->id)
+                    ->first();
+
+                // Ambil detail bus
+                $bus = DB::table('schedule_rute as sr')
+                    ->select(
+                        'b2.id as bus_id',
+                        'b2.bus_number',
+                        'b2.type_bus',
+                        'b2.bus_name',
+                        'b2.capacity',
+                        'c.class_name',
+                        'b2.cargo',
+                        DB::raw('(SELECT COUNT(*) FROM seats WHERE bus_id = b2.id AND is_active = 1 and id not in (select p.schedule_seat_id from passengers p left join bookings b on p.booking_id = b.id where b.schedule_id = sr.id and b.payment_status != "CANCELLED")) as total_seats')
+                    )
+                    ->join('schedules as s', 'sr.schedule_id', '=', 's.id')
+                    ->join('buses as b2', 's.bus_id', '=', 'b2.id')
+                    ->leftJoin('classes as c', 'b2.class_id', '=', 'c.id')
+                    ->where('sr.id', $scheduleRute->id)
+                    ->first();
+
+                // 1. Ambil semua kursi dari bus
+                $allSeats = DB::table('seats as se')
+                    ->select('se.id', 'se.seat_number')
+                    ->where('se.bus_id', $bus->bus_id)
+                    ->orderBy('se.id', 'asc')
+                    ->get();
+
+                // 2. Ambil data penumpang yang sudah booking
+                $bookedSeats = DB::table('schedules as s')
+                    ->select(
+                        'se.id as seat_id',
+                        'p.name as passenger_name',
+                        'p.gender',
+                        'p.phone_number as passenger_phone'
+                    )
+                    ->join('schedule_rute as sr', 's.id', '=', 'sr.schedule_id')
+                    ->join('buses as b2', 'b2.id', '=', 's.bus_id')
+                    ->join('seats as se', 'se.bus_id', '=', 'b2.id')
+                    ->join('scheduleseats as s2', function($join) use ($scheduleRute) {
+                        $join->on('s2.schedule_id', '=', 's.id')
+                            ->on('s2.seat_id', '=', 'se.id')
+                            ->where('s2.schedule_rute_id', '=', $scheduleRute->id)
+                            ->where('s2.is_available', '=', 0);
+                    })
+                    ->leftJoin('passengers as p', 's2.passengers_id', '=', 'p.id')
+                    ->where('sr.id', $scheduleRute->id)
+                    ->where('se.bus_id', $bus->bus_id)
+                    ->get()
+                    ->keyBy('seat_id');
+
+                // Gabungkan data kursi dengan data penumpang
+                $seats = $allSeats->map(function($seat) use ($bookedSeats) {
+                    $bookedSeat = $bookedSeats->get($seat->id);
+                    return [
+                        'seat_number' => $seat->seat_number,
+                        'passenger_name' => $bookedSeat->passenger_name ?? null,
+                        'gender' => $bookedSeat->gender ?? null,
+                        'passenger_phone' => $bookedSeat->passenger_phone ?? null
+                    ];
+                });
+
+                // Convert to comma separated string
+                $seatNumbers = $seats->pluck('seat_number')->implode(',');
+                $genders = $seats->map(function($seat) {
+                    return $seat['gender'] ?? 'null';
+                })->implode(',');
+                $passengerNames = $seats->map(function($seat) {
+                    return $seat['passenger_name'] ?? 'null';
+                })->implode(',');
+                $passengerPhones = $seats->map(function($seat) {
+                    return $seat['passenger_phone'] ?? 'null';
+                })->implode(',');
+
+                $result[] = [
+                    'rute' => $rute,
+                    'bus' => $bus,
+                    'seats' => [
+                        'seat_number' => $seatNumbers,
+                        'gender' => $genders,
+                        'passenger_name' => $passengerNames,
+                        'passenger_phone' => $passengerPhones
+                    ]
+                ];
+            }
+
+            return response()->json([
+                'status' => true,
+                'data' => [
+                    'schedule' => [
+                        'id' => $schedule->id,
+                        'departure_time' => $schedule->departure_time,
+                        'arrival_time' => $schedule->arrival_time,
+                        'bus_number' => $schedule->bus->bus_number ?? null,
+                        'bus_name' => $schedule->bus->bus_name ?? null,
+                        'supir' => $schedule->supir->name ?? null
+                    ],
+                    'rutes' => $result
+                ]
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Gagal mengambil data manifest',
                 'error' => $e->getMessage()
             ], 500);
         }

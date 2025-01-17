@@ -220,13 +220,16 @@ class BookingTransferController extends Controller
                 $midtransStatus = \Midtrans\Transaction::status($orderId);
                 Log::info('Midtrans Status Response:', (array) $midtransStatus);
 
+                // Konversi response ke array
+                $midtransStatusArray = (array) $midtransStatus;
+
                 // Tentukan payment status berdasarkan response Midtrans
                 $paymentStatus = 'PENDING';
-                switch ($midtransStatus->transaction_status) {
+                switch ($midtransStatusArray['transaction_status']) {
                     case 'capture':
-                        if ($midtransStatus->fraud_status == 'challenge') {
+                        if ($midtransStatusArray['fraud_status'] == 'challenge') {
                             $paymentStatus = 'CHALLENGE';
-                        } else if ($midtransStatus->fraud_status == 'accept') {
+                        } else if ($midtransStatusArray['fraud_status'] == 'accept') {
                             $paymentStatus = 'PAID';
                         }
                         break;
@@ -255,9 +258,9 @@ class BookingTransferController extends Controller
                 MidtransLog::create([
                     'order_id' => $orderId,
                     'booking_id' => $bookingId,
-                    'transaction_status' => $midtransStatus->transaction_status,
+                    'transaction_status' => $midtransStatusArray['transaction_status'],
                     'payment_status' => $paymentStatus,
-                    'midtrans_response' => (array) $midtransStatus
+                    'midtrans_response' => $midtransStatusArray
                 ]);
 
                 // Kirim notifikasi sesuai status
@@ -423,12 +426,25 @@ class BookingTransferController extends Controller
                     throw new \Exception('Kursi ' . $passenger['seat_number'] . ' sudah dipesan');
                 }
 
-                Passenger::create([
+                $passenger = Passenger::create([
                     'booking_id' => $booking->id,
                     'schedule_seat_id' => $seat->id,
                     'name' => $passenger['name'],
                     'phone_number' => $passenger['phone'] ?? null,
                     'gender' => $passenger['gender'],
+                    'created_by_id' => $request->user() ? $request->user()->id : null,
+                    'updated_by_id' => $request->user() ? $request->user()->id : null
+                ]);
+
+                // Tambahkan data ke scheduleseats
+                \App\Models\ScheduleSeats::create([
+                    'schedule_id' => $scheduleRute->schedule_id,
+                    'booking_Id' => $booking->id,
+                    'seat_id' => $seat->id,
+                    'schedule_rute_id' => $scheduleRute->id,
+                    'passengers_id' => $passenger->id,
+                    'is_available' => 0, // 0 karena sedang dipesan
+                    'description' => 'Kursi dipesan oleh ' . $passenger['name'],
                     'created_by_id' => $request->user() ? $request->user()->id : null,
                     'updated_by_id' => $request->user() ? $request->user()->id : null
                 ]);
@@ -487,7 +503,7 @@ class BookingTransferController extends Controller
                 ],
                 'expiry' => [
                     'unit' => 'minute',
-                    'duration' => 1
+                    'duration' => 8
                 ],
                 'callbacks' => [
                     'finish' => url('/api/midtrans/finish'),
@@ -501,7 +517,8 @@ class BookingTransferController extends Controller
 
             // Update booking dengan snap token
             $booking->update([
-                'payment_id' => $transactionDetails['transaction_details']['order_id']
+                'payment_id' => $transactionDetails['transaction_details']['order_id'],
+                'redirect_url' => 'https://app.' . (config('midtrans.is_production') ? '' : 'sandbox.') . 'midtrans.com/snap/v2/vtweb/' . $snapToken
             ]);
 
             // Format pesan WhatsApp
@@ -632,6 +649,13 @@ class BookingTransferController extends Controller
                 case 'capture': // Untuk kartu kredit yang berhasil
                 case 'settlement': // Untuk pembayaran yang sudah selesai
                     $booking->payment_status = 'PAID';
+                    // Update scheduleseats menjadi tidak tersedia
+                    \App\Models\ScheduleSeats::where('booking_Id', $booking->id)
+                        ->update([
+                            'is_available' => 0,
+                            'description' => 'Kursi telah dibayar',
+                            'updated_by_id' => $request->user() ? $request->user()->id : null
+                        ]);
                     $message = "✅ *Pembayaran Berhasil*\n\n"
                             . "Hai {$booking->name},\n"
                             . "Pembayaran tiket bus Anda telah berhasil dikonfirmasi.\n\n"
@@ -651,6 +675,13 @@ class BookingTransferController extends Controller
                 case 'expire':
                 case 'failure':
                     $booking->payment_status = 'CANCELLED';
+                    // Update scheduleseats menjadi tersedia kembali
+                    \App\Models\ScheduleSeats::where('booking_Id', $booking->id)
+                        ->update([
+                            'is_available' => 1,
+                            'description' => 'Kursi tersedia kembali karena pembayaran dibatalkan',
+                            'updated_by_id' => $request->user() ? $request->user()->id : null
+                        ]);
                     $message = "❌ *Pembayaran Gagal*\n\n"
                             . "Hai {$booking->name},\n"
                             . "Mohon maaf, pembayaran tiket bus Anda tidak berhasil.\n\n"

@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use App\Models\Seats;
+use App\Models\Bookings;
+use App\Models\User;
 
 class Passenger extends Model
 {
@@ -88,11 +91,11 @@ class Passenger extends Model
     }
 
     /**
-     * Get the schedule seat associated with the passenger.
+     * Get the seat associated with the passenger.
      */
-    public function scheduleSeat()
+    public function seat()
     {
-        return $this->belongsTo(ScheduleSeat::class, 'schedule_seat_id');
+        return $this->belongsTo(Seats::class, 'schedule_seat_id');
     }
 
     /**

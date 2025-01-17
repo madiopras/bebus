@@ -24,6 +24,7 @@ class Schedules extends Model
         'supir_id',
         'departure_time',
         'arrival_time',
+        'description',
         'created_by_id',
         'updated_by_id',
     ];

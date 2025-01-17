@@ -10,14 +10,14 @@ class RoleSeeder extends Seeder
     public function run(): void
     {
         $roles = [
-            ['name' => 'Supir', 'guard_name' => 'api'],
-            ['name' => 'Kasir Loket', 'guard_name' => 'api'],
-            ['name' => 'Operator Bus', 'guard_name' => 'api'],
-            ['name' => 'Customer Support', 'guard_name' => 'api'],
-            ['name' => 'Manajer Keuangan', 'guard_name' => 'api'],
-            ['name' => 'Scheduler', 'guard_name' => 'api'],
-            ['name' => 'Marketing', 'guard_name' => 'api'],
-            ['name' => 'IT', 'guard_name' => 'api'],
+            ['name' => 'Supir', 'guard_name' => 'sanctum'],
+            ['name' => 'Kasir Loket', 'guard_name' => 'sanctum'],
+            ['name' => 'Operator Bus', 'guard_name' => 'sanctum'],
+            ['name' => 'Customer Support', 'guard_name' => 'sanctum'],
+            ['name' => 'Manajer Keuangan', 'guard_name' => 'sanctum'],
+            ['name' => 'Scheduler', 'guard_name' => 'sanctum'],
+            ['name' => 'Marketing', 'guard_name' => 'sanctum'],
+            ['name' => 'IT', 'guard_name' => 'sanctum'],
             ['name' => 'admin', 'guard_name' => 'sanctum'],
             ['name' => 'user', 'guard_name' => 'sanctum']
         ];
