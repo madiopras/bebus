@@ -94,7 +94,7 @@ class ScheduleMasterController extends Controller
     {
         try {
             // Get Locations
-            $locations = Locations::select('id', 'name')->get();
+            $locations = Locations::select('id', 'name','place')->get();
 
             // Get All Buses with schedules without date filter
             $buses = Buses::select(
