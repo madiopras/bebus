@@ -119,7 +119,7 @@ class BookingTransferController extends Controller
                     $paymentStatus = 'PAID';
                     break;
                 case 'pending':
-                    $paymentStatus = 'PENDING';
+                    $paymentStatus = 'UNPAID';
                     break;
                 case 'deny':
                 case 'cancel':
@@ -237,7 +237,7 @@ class BookingTransferController extends Controller
                         $paymentStatus = 'PAID';
                         break;
                     case 'pending':
-                        $paymentStatus = 'PENDING';
+                        $paymentStatus = 'UNPAID';
                         break;
                     case 'deny':
                     case 'cancel':
@@ -278,14 +278,14 @@ class BookingTransferController extends Controller
                 throw new \Exception('Gagal memvalidasi status pembayaran: ' . $e->getMessage());
             }
 
-            return redirect()->to("/id/admin/bus/booking/{$booking->schedule_id}?status=success");
+            return redirect()->away(config('app.frontend_url') . "/id/checkpayment/{$orderId}?status=success");
         } catch (\Exception $e) {
             Log::error('Payment Finish Error:', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'request_data' => $request->all()
             ]);
-            return redirect()->to('/payment/error');
+            return redirect()->away(config('app.frontend_url') . "/id/checkpayment/{$request->order_id}?status=error");
         }
     }
 
@@ -302,7 +302,6 @@ class BookingTransferController extends Controller
             
             $bookingId = $matches[1];
             $booking = Bookings::findOrFail($bookingId);
-            $scheduleRuteId = $booking->schedule_id;
 
             MidtransLog::create([
                 'order_id' => $orderId,
@@ -312,14 +311,14 @@ class BookingTransferController extends Controller
                 'midtrans_response' => $request->all()
             ]);
 
-            return redirect()->to("/id/admin/bus/booking/{$scheduleRuteId}?status=unfinish");
+            return redirect()->away(config('app.frontend_url') . "/id/checkpayment/{$orderId}?status=unfinish");
         } catch (\Exception $e) {
             Log::error('Payment Unfinish Error:', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'request_data' => $request->all()
             ]);
-            return redirect()->to('/payment/error');
+            return redirect()->away(config('app.frontend_url') . "/id/checkpayment/{$request->order_id}?status=error");
         }
     }
 
@@ -336,7 +335,6 @@ class BookingTransferController extends Controller
             
             $bookingId = $matches[1];
             $booking = Bookings::findOrFail($bookingId);
-            $scheduleRuteId = $booking->schedule_id;
 
             MidtransLog::create([
                 'order_id' => $orderId,
@@ -346,14 +344,14 @@ class BookingTransferController extends Controller
                 'midtrans_response' => $request->all()
             ]);
 
-            return redirect()->to("/id/admin/bus/booking/{$scheduleRuteId}?status=error");
+            return redirect()->away(config('app.frontend_url') . "/id/checkpayment/{$orderId}?status=error");
         } catch (\Exception $e) {
             Log::error('Payment Error Handler:', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'request_data' => $request->all()
             ]);
-            return redirect()->to('/payment/error');
+            return redirect()->away(config('app.frontend_url') . "/id/checkpayment/{$request->order_id}?status=error");
         }
     }
 
@@ -667,7 +665,7 @@ class BookingTransferController extends Controller
                     break;
                     
                 case 'pending':
-                    $booking->payment_status = 'PENDING';
+                    $booking->payment_status = 'UNPAID';
                     break;
                     
                 case 'deny':

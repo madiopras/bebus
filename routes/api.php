@@ -20,6 +20,7 @@ use App\Http\Controllers\Admin\PaymentsController;
 use App\Http\Controllers\Admin\BookingTransferController;
 use App\Http\Controllers\Admin\BookingsController;
 use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Api\DashboardController;
 // Register and Login
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
@@ -43,6 +44,8 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::apiResource('classes', ClassesController::class);
         Route::apiResource('busses', BusesController::class);
         Route::apiResource('specialdays', SpecialDaysController::class);
+        Route::get('locations/get-state', [LocationsController::class, 'getLocations']);
+        Route::get('locations/get-name', [LocationsController::class, 'getNameLocations']);
         Route::apiResource('locations', LocationsController::class);
         Route::apiResource('facility', FacilitiesController::class);
         Route::apiResource('routes', RoutesController::class);
@@ -62,7 +65,13 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::post('payment', [PaymentsController::class, 'createTransaction']);
         Route::get('check-payment', [BookingsController::class, 'index']);
         Route::get('check-payment/{id}', [BookingsController::class, 'show']);
+        Route::get('check-payment-status/{paymentId}', [BookingsController::class, 'checkPaymentStatus']);
         Route::apiResource('orders', OrderController::class);
         Route::post('orders/{id}/cancel', [OrderController::class, 'cancelBooking']);
+        Route::get('utility-bbm/create-data', [\App\Http\Controllers\Admin\Master\UtilityBBMController::class, 'getDataCreate']);
+        Route::apiResource('utility-bbm', \App\Http\Controllers\Admin\Master\UtilityBBMController::class);
+        Route::get('dashboard/summary', [\App\Http\Controllers\Admin\Master\DashboardController::class, 'summary']);
+        Route::get('dashboard/charts', [\App\Http\Controllers\Admin\Master\DashboardController::class, 'charts']);
+        Route::get('dashboard/operational-table', [\App\Http\Controllers\Admin\Master\DashboardController::class, 'operationalTable']);
     });
 });

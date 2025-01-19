@@ -96,4 +96,46 @@ class LocationsController extends Controller
             return response()->json(['message' => 'Failed to delete location', 'error' => $e->getMessage()], 500);
         }
     }
+
+    public function getLocations()
+    {
+        try {
+            $states = Locations::select('state')
+                ->distinct()
+                ->whereNotNull('state')
+                ->orderBy('state')
+                ->pluck('state');
+
+            return response()->json([
+                'status' => true,
+                'data' => $states
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Gagal mengambil data lokasi',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getNameLocations()
+    {
+        try {
+            $locations = Locations::select('id', 'name', 'place')
+                ->orderBy('name')
+                ->get();
+
+            return response()->json([
+                'status' => true,
+                'data' => $locations
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Gagal mengambil data nama lokasi',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }
