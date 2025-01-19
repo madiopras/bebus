@@ -14,11 +14,39 @@ class RoutesController extends Controller
     public function index(Request $request)
     {
         try {
-            $filters = $request->only(['start_location', 'end_location', 'distance', 'price']);
+            $filters = $request->only(['start_location', 'end_location', 'distance', 'price', 'start_location_id', 'end_location_id']);
             $limit = $request->query('limit', 10);
             $page = $request->query('page', 1);
 
-            $routes = Routes::filterWithJoin($filters)->paginate($limit, ['*'], 'page', $page);
+            $query = Routes::query();
+
+            // Filter berdasarkan start_location_id dan end_location_id
+            if (isset($filters['start_location_id'])) {
+                $query->where('start_location_id', $filters['start_location_id']);
+            }
+            if (isset($filters['end_location_id'])) {
+                $query->where('end_location_id', $filters['end_location_id']);
+            }
+
+            // Filter yang sudah ada sebelumnya
+            if (isset($filters['start_location'])) {
+                $query->whereHas('startLocation', function($q) use ($filters) {
+                    $q->where('name', 'like', '%' . $filters['start_location'] . '%');
+                });
+            }
+            if (isset($filters['end_location'])) {
+                $query->whereHas('endLocation', function($q) use ($filters) {
+                    $q->where('name', 'like', '%' . $filters['end_location'] . '%');
+                });
+            }
+            if (isset($filters['distance'])) {
+                $query->where('distance', $filters['distance']);
+            }
+            if (isset($filters['price'])) {
+                $query->where('price', $filters['price']);
+            }
+
+            $routes = $query->with(['startLocation', 'endLocation'])->paginate($limit, ['*'], 'page', $page);
             
             // Ambil semua lokasi yang tersedia
             $locations = Locations::select('id', 'name')->get();
@@ -32,7 +60,11 @@ class RoutesController extends Controller
                 'total_items' => $routes->total()
             ], 200);
         } catch (\Exception $e) {
-            return response()->json(['message' => 'Failed to fetch routes', 'error' => $e->getMessage()], 500);
+            return response()->json([
+                'status' => false,
+                'message' => 'Gagal mengambil data rute',
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 

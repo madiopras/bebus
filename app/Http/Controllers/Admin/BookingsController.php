@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreBookingRequest;
 use App\Http\Requests\UpdateBookingRequest;
 use App\Models\Bookings;
+use App\Models\MidtransLog;
 use Illuminate\Http\Request;
 
 class BookingsController extends Controller
@@ -106,6 +107,89 @@ class BookingsController extends Controller
             return response()->json(['message' => 'Booking deleted successfully'], 200);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Failed to delete booking', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function checkPaymentStatus($paymentId)
+    {
+        try {
+            // Ambil booking ID dari payment ID (format: BOOK-{id}-timestamp)
+            preg_match('/BOOK-(\d+)-/', $paymentId, $matches);
+            if (empty($matches[1])) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Format payment ID tidak valid'
+                ], 400);
+            }
+
+            $bookingId = $matches[1];
+            
+            // Ambil data booking beserta relasinya
+            $booking = Bookings::select(
+                'bookings.*',
+                'sr.departure_time',
+                'sr.arrival_time',
+                'sr.price_rute',
+                'l.name as dari',
+                'l2.name as ke',
+                'b.bus_number as kode_bus',
+                'b.bus_name as nama_bus',
+                'b.type_bus as tipe_bus'
+            )
+            ->leftJoin('schedule_rute as sr', 'bookings.schedule_id', '=', 'sr.id')
+            ->leftJoin('routes as r', 'sr.route_id', '=', 'r.id')
+            ->leftJoin('locations as l', 'r.start_location_id', '=', 'l.id')
+            ->leftJoin('locations as l2', 'r.end_location_id', '=', 'l2.id')
+            ->leftJoin('schedules as s', 'sr.schedule_id', '=', 's.id')
+            ->leftJoin('buses as b', 's.bus_id', '=', 'b.id')
+            ->with(['passengers'])
+            ->findOrFail($bookingId);
+
+            // Format response data
+            $formattedData = [
+                'booking' => [
+                    'payment_id' => $paymentId,
+                    'name' => $booking->name,
+                    'email' => $booking->email,
+                    'phone_number' => $booking->phone_number,
+                    'booking_date' => $booking->booking_date,
+                    'payment_status' => $booking->payment_status,
+                    'final_price' => $booking->final_price,
+                    'customer_type' => $booking->customer_type,
+                    'redirect_url' => $booking->redirect_url
+                ],
+                'schedule_info' => [
+                    'route' => $booking->dari && $booking->ke ? $booking->dari . ' - ' . $booking->ke : 'N/A',
+                    'bus_info' => [
+                        'kode' => $booking->kode_bus ?? 'N/A',
+                        'nama' => $booking->nama_bus ?? 'N/A',
+                        'tipe' => $booking->tipe_bus ?? 'N/A'
+                    ],
+                    'departure_time' => $booking->departure_time ?? 'N/A',
+                    'arrival_time' => $booking->arrival_time ?? 'N/A',
+                    'price_rute' => $booking->price_rute ?? 'N/A'
+                ],
+                'passengers' => $booking->passengers->map(function($passenger) {
+                    return [
+                        'name' => $passenger->name,
+                        'gender' => $passenger->gender,
+                        'phone_number' => $passenger->phone_number,
+                        'schedule_seat_id' => $passenger->schedule_seat_id
+                    ];
+                })
+            ];
+
+            return response()->json([
+                'status' => true,
+                'data' => $formattedData
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Gagal mengambil data pembayaran',
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 }
