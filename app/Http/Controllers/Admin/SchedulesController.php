@@ -177,6 +177,61 @@ class SchedulesController extends Controller
     public function store(StoreSchedulesRequest $request)
     {
         try {
+            // Validasi input wajib
+            if (!$request->bus_id) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Bus harus dipilih'
+                ], 422);
+            }
+
+            if (!$request->supir_id) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Supir harus dipilih'
+                ], 422);
+            }
+
+            if (!$request->location_id) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Lokasi harus dipilih'
+                ], 422);
+            }
+
+            // Validasi minimal satu rute
+            if (!$request->schedule_rutes || count($request->schedule_rutes) < 1) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Minimal harus mengisi satu rute'
+                ], 422);
+            }
+
+            // Validasi rute yang sama
+            $routeIds = array_column($request->schedule_rutes, 'route_id');
+            if (count($routeIds) !== count(array_unique($routeIds))) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Tidak boleh ada rute yang sama dalam satu jadwal'
+                ], 422);
+            }
+
+            // Validasi waktu keberangkatan yang berselisih
+            $departureTimes = array_column($request->schedule_rutes, 'departure_time');
+            sort($departureTimes);
+            for ($i = 0; $i < count($departureTimes) - 1; $i++) {
+                $time1 = strtotime($departureTimes[$i]);
+                $time2 = strtotime($departureTimes[$i + 1]);
+                
+                // Jika waktu sama persis
+                if ($time1 === $time2) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Tidak boleh ada rute dengan waktu keberangkatan yang sama'
+                    ], 422);
+                }
+            }
+
             $schedule = Schedules::create([
                 'location_id' => $request->location_id,
                 'bus_id' => $request->bus_id,
@@ -218,6 +273,61 @@ class SchedulesController extends Controller
         }
 
         try {
+            // Validasi input wajib
+            if (!$request->bus_id) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Bus harus dipilih'
+                ], 422);
+            }
+
+            if (!$request->supir_id) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Supir harus dipilih'
+                ], 422);
+            }
+
+            if (!$request->location_id) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Lokasi harus dipilih'
+                ], 422);
+            }
+
+            // Validasi minimal satu rute
+            if (!$request->schedule_rutes || count($request->schedule_rutes) < 1) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Minimal harus mengisi satu rute'
+                ], 422);
+            }
+
+            // Validasi rute yang sama
+            $routeIds = array_column($request->schedule_rutes, 'route_id');
+            if (count($routeIds) !== count(array_unique($routeIds))) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Tidak boleh ada rute yang sama dalam satu jadwal'
+                ], 422);
+            }
+
+            // Validasi waktu keberangkatan yang berselisih
+            $departureTimes = array_column($request->schedule_rutes, 'departure_time');
+            sort($departureTimes);
+            for ($i = 0; $i < count($departureTimes) - 1; $i++) {
+                $time1 = strtotime($departureTimes[$i]);
+                $time2 = strtotime($departureTimes[$i + 1]);
+                
+                // Jika waktu sama persis
+                if ($time1 === $time2) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Tidak boleh ada rute dengan waktu keberangkatan yang sama'
+                    ], 422);
+                }
+            }
+
             // Memperbarui informasi jadwal
             $schedule->update([
                 'location_id' => $request->location_id,

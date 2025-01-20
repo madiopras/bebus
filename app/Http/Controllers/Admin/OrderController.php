@@ -84,6 +84,11 @@ class OrderController extends Controller
                 $query->where('bookings.customer_type', $request->customer_type);
             }
 
+            // Filter berdasarkan payment_id
+            if ($request->has('payment_id')) {
+                $query->where('bookings.payment_id', 'like', '%' . $request->payment_id . '%');
+            }
+
             // Filter berdasarkan pencarian nama/email/phone
             if ($request->has('search')) {
                 $search = $request->search;
@@ -97,13 +102,33 @@ class OrderController extends Controller
             // Hitung statistik
             $statistics = [
                 'total_bookings' => DB::table('bookings')->count(),
-                'total_revenue' => DB::table('bookings')->where('payment_status', 'PAID')->sum('final_price'),
+                'total_revenue' => DB::table('bookings')
+                    ->where('payment_status', 'PAID')
+                    ->when($request->has('start_date') && $request->has('end_date'), function($query) use ($request) {
+                        return $query->whereBetween('booking_date', [
+                            Carbon::parse($request->start_date)->startOfDay(),
+                            Carbon::parse($request->end_date)->endOfDay()
+                        ]);
+                    })
+                    ->sum('final_price'),
                 'payment_status_count' => DB::table('bookings')
                     ->select('payment_status', DB::raw('count(*) as total'))
+                    ->when($request->has('start_date') && $request->has('end_date'), function($query) use ($request) {
+                        return $query->whereBetween('booking_date', [
+                            Carbon::parse($request->start_date)->startOfDay(),
+                            Carbon::parse($request->end_date)->endOfDay()
+                        ]);
+                    })
                     ->groupBy('payment_status')
                     ->pluck('total', 'payment_status'),
                 'customer_type_count' => DB::table('bookings')
                     ->select(DB::raw('COALESCE(customer_type, "") as customer_type'), DB::raw('count(*) as total'))
+                    ->when($request->has('start_date') && $request->has('end_date'), function($query) use ($request) {
+                        return $query->whereBetween('booking_date', [
+                            Carbon::parse($request->start_date)->startOfDay(),
+                            Carbon::parse($request->end_date)->endOfDay()
+                        ]);
+                    })
                     ->groupBy('customer_type')
                     ->pluck('total', 'customer_type')
             ];

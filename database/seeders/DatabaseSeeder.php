@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
             PermissionSeeder::class,
             AssignRoleSeeder::class,
             DefaultDataSeeder::class,
+            MedanLocationsSeeder::class,
         ]);
     }
 }

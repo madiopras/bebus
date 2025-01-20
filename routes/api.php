@@ -70,8 +70,21 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::post('orders/{id}/cancel', [OrderController::class, 'cancelBooking']);
         Route::get('utility-bbm/create-data', [\App\Http\Controllers\Admin\Master\UtilityBBMController::class, 'getDataCreate']);
         Route::apiResource('utility-bbm', \App\Http\Controllers\Admin\Master\UtilityBBMController::class);
-        Route::get('dashboard/summary', [\App\Http\Controllers\Admin\Master\DashboardController::class, 'summary']);
-        Route::get('dashboard/charts', [\App\Http\Controllers\Admin\Master\DashboardController::class, 'charts']);
-        Route::get('dashboard/operational-table', [\App\Http\Controllers\Admin\Master\DashboardController::class, 'operationalTable']);
+        Route::get('dashboard/operasional', [\App\Http\Controllers\Admin\Master\DashboardController::class, 'getAllDashboard']);
+        Route::get('/buses-routes', [App\Http\Controllers\Admin\Master\ScheduleMasterController::class, 'getBusesAndRoutes']);
+        
+        // Laporan Routes
+        Route::get('laporan/pendapatan', [\App\Http\Controllers\Admin\Laporan\PendapatanController::class, 'index']);
+        Route::get('laporan/pendapatan/download', [\App\Http\Controllers\Admin\Laporan\PendapatanController::class, 'download']);
+
+        Route::get('laporan/pengeluaran', [\App\Http\Controllers\Admin\Laporan\PengeluaranController::class, 'index']);
+        Route::get('laporan/pengeluaran/download', [\App\Http\Controllers\Admin\Laporan\PengeluaranController::class, 'download']);
+
+        Route::get('laporan/bersih', [\App\Http\Controllers\Admin\Laporan\BersihController::class, 'index']);
+        Route::get('laporan/bersih/download', [\App\Http\Controllers\Admin\Laporan\BersihController::class, 'download']);
+
+        Route::get('master/users/cek-username', [\App\Http\Controllers\Admin\Master\UsersController::class, 'cekUsername']);
     });
+
+   
 });
