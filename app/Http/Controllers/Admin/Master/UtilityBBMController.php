@@ -27,6 +27,7 @@ class UtilityBBMController extends Controller
                     'utility_bbm.harga_liter_bbm',
                     'utility_bbm.total_perkiraan_harga_bbm',
                     'utility_bbm.total_aktual_harga_bbm',
+                    'utility_bbm.description',
                     'utility_bbm.created_at',
                     'utility_bbm.updated_at'
                 ])
@@ -97,6 +98,7 @@ class UtilityBBMController extends Controller
                 'harga_liter_bbm' => 'required|numeric|min:0',
                 'total_perkiraan_harga_bbm' => 'required|numeric|min:0',
                 'total_aktual_harga_bbm' => 'required|numeric|min:0',
+                'description' => 'nullable|string|max:1000'
             ]);
 
             // Get schedule data for nomor_jadwal_bus
@@ -151,6 +153,7 @@ class UtilityBBMController extends Controller
                 'harga_liter_bbm' => 'required|numeric|min:0',
                 'total_perkiraan_harga_bbm' => 'required|numeric|min:0',
                 'total_aktual_harga_bbm' => 'required|numeric|min:0',
+                'description' => 'nullable|string|max:1000'
             ]);
 
             // Update nomor_jadwal_bus if schedule_id changed

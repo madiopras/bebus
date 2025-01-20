@@ -145,5 +145,44 @@ class ScheduleMasterController extends Controller
             ], 500);
         }
     }
-    
+
+    public function getBusesAndRoutes()
+    {
+        try {
+            // Get Buses
+            $buses = Buses::select(
+                'buses.id',
+                'buses.bus_number',
+                'buses.bus_name',
+                'classes.class_name'
+            )
+            ->leftJoin('classes', 'buses.class_id', '=', 'classes.id')
+            ->where('buses.is_active', 1)
+            ->get();
+
+            // Get Routes with location names
+            $routes = Routes::select(
+                'routes.id',
+                DB::raw("CONCAT(start_loc.name, ' - ', end_loc.name) as route_name")
+            )
+            ->join('locations as start_loc', 'routes.start_location_id', '=', 'start_loc.id')
+            ->join('locations as end_loc', 'routes.end_location_id', '=', 'end_loc.id')
+            ->get();
+
+            return response()->json([
+                'status' => true,
+                'data' => [
+                    'buses' => $buses,
+                    'routes' => $routes
+                ]
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Gagal mengambil data buses dan routes',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 } 
