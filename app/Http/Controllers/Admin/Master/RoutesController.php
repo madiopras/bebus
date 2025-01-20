@@ -88,6 +88,26 @@ class RoutesController extends Controller
     public function store(StoreRouteRequest $request)
     {
         try {
+            // Validasi lokasi awal dan akhir tidak boleh sama
+            if ($request->start_location_id === $request->end_location_id) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Lokasi awal dan akhir tidak boleh sama'
+                ], 422);
+            }
+
+            // Cek apakah rute dengan kombinasi lokasi yang sama sudah ada
+            $existingRoute = Routes::where('start_location_id', $request->start_location_id)
+                                 ->where('end_location_id', $request->end_location_id)
+                                 ->first();
+
+            if ($existingRoute) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Rute dengan lokasi awal dan akhir tersebut sudah ada'
+                ], 422);
+            }
+
             $route = Routes::create([
                 'start_location_id' => $request->start_location_id,
                 'end_location_id' => $request->end_location_id,
@@ -112,6 +132,27 @@ class RoutesController extends Controller
         }
 
         try {
+            // Validasi lokasi awal dan akhir tidak boleh sama
+            if ($request->start_location_id === $request->end_location_id) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Lokasi awal dan akhir tidak boleh sama'
+                ], 422);
+            }
+
+            // Cek apakah rute dengan kombinasi lokasi yang sama sudah ada (kecuali rute yang sedang diupdate)
+            $existingRoute = Routes::where('start_location_id', $request->start_location_id)
+                                 ->where('end_location_id', $request->end_location_id)
+                                 ->where('id', '!=', $id)
+                                 ->first();
+
+            if ($existingRoute) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Rute dengan lokasi awal dan akhir tersebut sudah ada'
+                ], 422);
+            }
+
             $route->update($request->only(['start_location_id', 'end_location_id', 'distance', 'price']));
 
             $route->updated_by_id = $request->user()->id;
