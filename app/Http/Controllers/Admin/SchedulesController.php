@@ -207,14 +207,6 @@ class SchedulesController extends Controller
                 ], 422);
             }
 
-            // Validasi rute yang sama
-            $routeIds = array_column($request->schedule_rutes, 'route_id');
-            if (count($routeIds) !== count(array_unique($routeIds))) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Tidak boleh ada rute yang sama dalam satu jadwal'
-                ], 422);
-            }
 
             // Validasi waktu keberangkatan yang berselisih
             $departureTimes = array_column($request->schedule_rutes, 'departure_time');
@@ -303,14 +295,7 @@ class SchedulesController extends Controller
                 ], 422);
             }
 
-            // Validasi rute yang sama
-            $routeIds = array_column($request->schedule_rutes, 'route_id');
-            if (count($routeIds) !== count(array_unique($routeIds))) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Tidak boleh ada rute yang sama dalam satu jadwal'
-                ], 422);
-            }
+   
 
             // Validasi waktu keberangkatan yang berselisih
             $departureTimes = array_column($request->schedule_rutes, 'departure_time');

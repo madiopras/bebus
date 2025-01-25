@@ -128,21 +128,36 @@ public function update(UpdateBusRequest $request, $id)
             'updated_by_id' => $request->user()->id,
         ]);
 
-        // Hapus kursi lama
-        Seats::where('bus_id', $bus->id)->delete();
-
         // Convert not_used string to array
         $notUsedSeats = $request->not_used ? explode(',', $request->not_used) : [];
 
-        // Buat kursi baru berdasarkan kapasitas bus yang baru
-        for ($i = 1; $i <= $request->capacity; $i++) {
-            Seats::create([
-                'bus_id' => $bus->id,
-                'seat_number' => $i,
-                'is_active' => !in_array($i, $notUsedSeats),
-                'created_by_id' => $request->user()->id,
-                'updated_by_id' => $request->user()->id,
+        // Update kursi yang sudah ada
+        $existingSeats = Seats::where('bus_id', $bus->id)->get();
+        foreach ($existingSeats as $seat) {
+            $seat->update([
+                'is_active' => !in_array($seat->seat_number, $notUsedSeats),
+                'updated_by_id' => $request->user()->id
             ]);
+        }
+
+        // Jika kapasitas bertambah, tambahkan kursi baru
+        $currentSeatCount = $existingSeats->count();
+        if ($request->capacity > $currentSeatCount) {
+            for ($i = $currentSeatCount + 1; $i <= $request->capacity; $i++) {
+                Seats::create([
+                    'bus_id' => $bus->id,
+                    'seat_number' => $i,
+                    'is_active' => !in_array($i, $notUsedSeats),
+                    'created_by_id' => $request->user()->id,
+                    'updated_by_id' => $request->user()->id,
+                ]);
+            }
+        }
+        // Jika kapasitas berkurang, hapus kursi yang tidak digunakan
+        else if ($request->capacity < $currentSeatCount) {
+            Seats::where('bus_id', $bus->id)
+                 ->where('seat_number', '>', $request->capacity)
+                 ->delete();
         }
 
         DB::commit();

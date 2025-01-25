@@ -19,7 +19,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['http://127.0.0.1:3000', 'https://sumatraapp.vercel.app'],
+    'allowed_origins' => ['http://127.0.0.1:3000', 'http://192.168.1.201:3000'],
 
     'allowed_origins_patterns' => [],
 
