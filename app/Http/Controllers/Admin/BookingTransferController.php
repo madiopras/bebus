@@ -115,21 +115,27 @@ class BookingTransferController extends Controller
                         $paymentStatus = 'PAID';
                     }
                     break;
-                case 'settlement':
-                    $paymentStatus = 'PAID';
-                    break;
-                case 'pending':
-                    $paymentStatus = 'UNPAID';
-                    break;
-                case 'deny':
-                case 'cancel':
-                case 'expire':
-                case 'failure':
-                    $paymentStatus = 'CANCELLED';
-                    break;
-                case 'refund':
-                    $paymentStatus = 'REFUNDED';
-                    break;
+                    case 'settlement':
+                        $paymentStatus = 'PAID';
+                        break;
+                    case 'pending':
+                        $paymentStatus = 'UNPAID';
+                        break;
+                    case 'deny':
+                        $paymentStatus = 'CANCELLED';
+                        break;
+                    case 'cancel':
+                        $paymentStatus = 'CANCELLED';
+                        break;
+                    case 'expire':
+                        $paymentStatus = 'CANCELLED';
+                        break;
+                    case 'failure':
+                        $paymentStatus = 'CANCELLED';
+                        break;
+                    case 'refund':
+                        $paymentStatus = 'CANCELLED';
+                        break;
             }
 
             // Simpan log Midtrans
@@ -233,21 +239,27 @@ class BookingTransferController extends Controller
                             $paymentStatus = 'PAID';
                         }
                         break;
-                    case 'settlement':
-                        $paymentStatus = 'PAID';
-                        break;
-                    case 'pending':
-                        $paymentStatus = 'UNPAID';
-                        break;
-                    case 'deny':
-                    case 'cancel':
-                    case 'expire':
-                    case 'failure':
-                        $paymentStatus = 'CANCELLED';
-                        break;
-                    case 'refund':
-                        $paymentStatus = 'REFUNDED';
-                        break;
+                        case 'settlement':
+                            $paymentStatus = 'PAID';
+                            break;
+                        case 'pending':
+                            $paymentStatus = 'UNPAID';
+                            break;
+                        case 'deny':
+                            $paymentStatus = 'CANCELLED';
+                            break;
+                        case 'cancel':
+                            $paymentStatus = 'CANCELLED';
+                            break;
+                        case 'expire':
+                            $paymentStatus = 'CANCELLED';
+                            break;
+                        case 'failure':
+                            $paymentStatus = 'CANCELLED';
+                            break;
+                        case 'refund':
+                            $paymentStatus = 'CANCELLED';
+                            break;
                 }
 
                 // Update status booking

@@ -298,7 +298,7 @@ class ScheduleRuteController extends Controller
                         'b2.capacity',
                         'c.class_name',
                         'b2.cargo',
-                        DB::raw('(SELECT COUNT(*) FROM seats WHERE bus_id = b2.id AND is_active = 1 and id not in (select p.schedule_seat_id from passengers p left join bookings b on p.booking_id = b.id where b.schedule_id = sr.id and b.payment_status != "CANCELLED")) as total_seats')
+                        DB::raw('(SELECT COUNT(*) FROM seats WHERE bus_id = b2.id AND is_active = 1 and id not in (select p.schedule_seat_id from passengers p left join bookings b on p.booking_id = b.id where b.schedule_id = sr.id and b.payment_status = "PAID")) as total_seats')
                     )
                     ->join('schedules as s', 'sr.schedule_id', '=', 's.id')
                     ->join('buses as b2', 's.bus_id', '=', 'b2.id')
