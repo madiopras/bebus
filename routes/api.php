@@ -21,6 +21,12 @@ use App\Http\Controllers\Admin\BookingTransferController;
 use App\Http\Controllers\Admin\BookingsController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Api\DashboardController;
+
+//Cek API
+Route::get('/health', function () {
+    return response()->json(['message' => 'OK'], 200);
+});
+
 // Register and Login
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
