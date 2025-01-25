@@ -32,6 +32,7 @@ class Passenger extends Model
         'name',
         'gender',
         'phone_number',
+        'birth_date',
         'description',
         'created_by_id',
         'updated_by_id',
@@ -45,6 +46,7 @@ class Passenger extends Model
     protected $casts = [
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'birth_date' => 'date:Y-m-d',
     ];
 
     /**

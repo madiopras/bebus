@@ -24,6 +24,7 @@ class Bookings extends Model
         'schedule_id',
         'booking_date',
         'payment_status',
+        'payment_method',
         'final_price',
         'voucher_id',
         'specialdays_id',
@@ -152,5 +153,36 @@ class Bookings extends Model
     public function passengers()
     {
         return $this->hasMany(Passenger::class, 'booking_id');
+    }
+
+    /**
+     * Calculate admin fee based on payment method
+     * 
+     * @param string $paymentMethod
+     * @param float $amount
+     * @return float
+     */
+    public static function calculateAdminFee($paymentMethod, $amount)
+    {
+        if (str_contains(strtoupper($paymentMethod), 'VA') || 
+            str_contains(strtoupper($paymentMethod), 'BANK')) {
+            return 2000;
+        } elseif (str_contains(strtoupper($paymentMethod), 'QRIS')) {
+            return $amount * 0.007; // 0.7%
+        }
+        return 0;
+    }
+
+    /**
+     * Calculate total amount including admin fee
+     * 
+     * @param string $paymentMethod
+     * @param float $amount
+     * @return float
+     */
+    public static function calculateTotalWithAdminFee($paymentMethod, $amount)
+    {
+        $adminFee = self::calculateAdminFee($paymentMethod, $amount);
+        return $amount + $adminFee;
     }
 }
