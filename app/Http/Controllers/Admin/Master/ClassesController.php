@@ -147,4 +147,27 @@ class ClassesController extends Controller
             return response()->json(['message' => 'Failed to delete class', 'error' => $e->getMessage()], 500);
         }
     }
+
+    public function getNameList()
+    {
+        try {
+            $classes = Classes::select('id', 'class_name')->get()
+                ->map(function ($class) {
+                    return [
+                        'id' => $class->id,
+                        'name' => $class->class_name
+                    ];
+                });
+
+            return response()->json([
+                'status' => true,
+                'data' => $classes
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to fetch class names',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

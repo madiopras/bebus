@@ -298,7 +298,7 @@ class ScheduleRuteController extends Controller
                         'b2.capacity',
                         'c.class_name',
                         'b2.cargo',
-                        DB::raw('(SELECT COUNT(*) FROM seats WHERE bus_id = b2.id AND is_active = 1 and id not in (select p.schedule_seat_id from passengers p left join bookings b on p.booking_id = b.id where b.schedule_id = sr.id and b.payment_status != "CANCELLED")) as total_seats')
+                        DB::raw('(SELECT COUNT(*) FROM seats WHERE bus_id = b2.id AND is_active = 1 and id not in (select p.schedule_seat_id from passengers p left join bookings b on p.booking_id = b.id where b.schedule_id = sr.id and b.payment_status = "PAID")) as total_seats')
                     )
                     ->join('schedules as s', 'sr.schedule_id', '=', 's.id')
                     ->join('buses as b2', 's.bus_id', '=', 'b2.id')
@@ -389,6 +389,105 @@ class ScheduleRuteController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Gagal mengambil data manifest',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getNameList(Request $request)
+    {
+        try {
+            $limit = $request->query('limit', 10);
+            $page = $request->query('page', 1);
+            
+            $query = DB::table('schedules as s')
+                ->select(
+                    'sr.schedule_id',
+                    'sr.id as schedule_rute_id', 
+                    DB::raw("DATE_FORMAT(sr.departure_time, '%Y-%m-%d %H:%i:%s') as departure_time"),
+                    DB::raw("DATE_FORMAT(sr.arrival_time, '%Y-%m-%d %H:%i:%s') as arrival_time"),
+                    'sr.is_active',
+                    'l.name as dari',
+                    'l.place as dari_shelter',
+                    'l.id as dari_id',
+                    'l2.name as ke', 
+                    'l2.place as ke_shelter',
+                    'l2.id as ke_id',
+                    'sr.price_rute',
+                    'b.bus_number as kode_bus',
+                    'b.bus_name as nama_bus',
+                    'b.type_bus as tipe_bus',
+                    'c.class_name as kelas_bus',
+                    'c.id as class_id',
+                    'u.name as supir',
+                    DB::raw('(SELECT COUNT(*) FROM seats WHERE bus_id = b.id AND is_active = 1 and id not in (select p.schedule_seat_id from passengers p left join bookings b on p.booking_id = b.id where b.schedule_id = sr.id and b.payment_status != "CANCELLED")) as total_seats'),
+                    DB::raw('GROUP_CONCAT(DISTINCT f.name ORDER BY f.name ASC SEPARATOR ", ") as name_facilities')
+                )
+                ->leftJoin('schedule_rute as sr', 's.id', '=', 'sr.schedule_id')
+                ->join('routes as r', 'r.id', '=', 'sr.route_id')
+                ->leftJoin('locations as l', 'r.start_location_id', '=', 'l.id')
+                ->leftJoin('locations as l2', 'r.end_location_id', '=', 'l2.id')
+                ->leftJoin('buses as b', 's.bus_id', '=', 'b.id')
+                ->leftJoin('users as u', 's.supir_id', '=', 'u.id')
+                ->leftJoin('classes as c', 'b.class_id', '=', 'c.id')
+                ->leftJoin('class_facilities as cf', 'c.id', '=', 'cf.class_id')
+                ->leftJoin('facilities as f', 'cf.facility_id', '=', 'f.id')
+                ->where('sr.departure_time', '>=', now())
+                ->groupBy(
+                    'sr.schedule_id',
+                    'sr.id',
+                    'sr.departure_time', 
+                    'sr.arrival_time',
+                    'sr.is_active',
+                    'l.name',
+                    'l.id',
+                    'l2.name',
+                    'l2.id',
+                    'sr.price_rute',
+                    'b.bus_number',
+                    'b.bus_name',
+                    'b.type_bus',
+                    'c.id',
+                    'c.class_name',
+                    'u.name',
+                    'b.id',
+                    'l2.place',
+                    'l.place'
+                );
+
+            // Apply filters
+            if ($request->has('departure_start')) {
+                $query->whereRaw('DATE(sr.departure_time) >= ?', [$request->departure_start]);
+            }
+            if ($request->has('departure_end')) {
+                $query->whereRaw('DATE(sr.departure_time) <= ?', [$request->departure_end]);
+            }
+            if ($request->has('dari')) {
+                $query->where('l.id', $request->dari);
+            }
+            if ($request->has('ke')) {
+                $query->where('l2.id', $request->ke);
+            }
+            if ($request->has('class')) {
+                $query->where('c.id', $request->class);
+            }
+            if ($request->has('selected_seats')) {
+                $query->having('total_seats', '>=', $request->selected_seats);
+            }
+
+            $scheduleRutes = $query->paginate($limit);
+
+            return response()->json([
+                'status' => true,
+                'data' => $scheduleRutes->items(),
+                'current_page' => $scheduleRutes->currentPage(),
+                'total_pages' => $scheduleRutes->lastPage(),
+                'total_items' => $scheduleRutes->total()
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Gagal mengambil data jadwal rute',
                 'error' => $e->getMessage()
             ], 500);
         }
