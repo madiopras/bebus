@@ -25,6 +25,8 @@ class CheckMidtransPaymentStatus extends Command
      * @var string
      */
     protected $description = 'Cek status pembayaran di Midtrans untuk booking yang belum dibayar';
+    //protected $description = now()->toDateTimeString() . ' - Cek status pembayaran di Midtrans untuk booking yang belum dibayar';
+
 
     public function __construct()
     {
