@@ -282,6 +282,15 @@ class BookingTransferController extends Controller
                     $this->sendFailureNotification($booking);
                 }
 
+                // Redirect sesuai payment_status
+                if ($paymentStatus == 'PAID') {
+                    return redirect()->away(config('app.frontend_url') . "/id/checkpayment/{$orderId}?status=success");
+                } else if ($paymentStatus == 'CANCELLED') {
+                    return redirect()->away(config('app.frontend_url') . "/id/checkpayment/{$orderId}?status=error");
+                } else {
+                    return redirect()->away(config('app.frontend_url') . "/id/checkpayment/{$orderId}?status=unfinish");
+                }
+
             } catch (\Exception $e) {
                 Log::error('Midtrans Status Check Error:', [
                     'message' => $e->getMessage(),
@@ -290,7 +299,6 @@ class BookingTransferController extends Controller
                 throw new \Exception('Gagal memvalidasi status pembayaran: ' . $e->getMessage());
             }
 
-            return redirect()->away(config('app.frontend_url') . "/id/checkpayment/{$orderId}?status=success");
         } catch (\Exception $e) {
             Log::error('Payment Finish Error:', [
                 'message' => $e->getMessage(),
@@ -318,8 +326,8 @@ class BookingTransferController extends Controller
             MidtransLog::create([
                 'order_id' => $orderId,
                 'booking_id' => $bookingId,
-                'transaction_status' => 'UNFINISH',
-                'payment_status' => 'UNFINISH',
+                'transaction_status' => 'UNPAID',
+                'payment_status' => 'UNPAID',
                 'midtrans_response' => $request->all()
             ]);
 

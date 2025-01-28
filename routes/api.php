@@ -72,12 +72,21 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::get('check-payment', [BookingsController::class, 'index']);
     Route::get('check-payment/{id}', [BookingsController::class, 'show']);
     Route::get('check-payment-status/{paymentId}', [BookingsController::class, 'checkPaymentStatus']);
+    Route::get('bookings/three-days', [BookingsController::class, 'getBookingsThreeDays']);
+    Route::get('bookings/one-day', [BookingsController::class, 'getBookingsOneDay']);
+    Route::get('bookings/get-class', [BookingsController::class, 'getBookingsByClass']);
     Route::apiResource('orders', OrderController::class);
     Route::post('orders/{id}/cancel', [OrderController::class, 'cancelBooking']);
     Route::get('utility-bbm/create-data', [\App\Http\Controllers\Admin\Master\UtilityBBMController::class, 'getDataCreate']);
     Route::apiResource('utility-bbm', \App\Http\Controllers\Admin\Master\UtilityBBMController::class);
     Route::get('dashboard/operasional', [\App\Http\Controllers\Admin\Master\DashboardController::class, 'getAllDashboard']);
     Route::get('/buses-routes', [App\Http\Controllers\Admin\Master\ScheduleMasterController::class, 'getBusesAndRoutes']);
+    
+    // Refund Routes
+    Route::apiResource('refunds', \App\Http\Controllers\Admin\RefundController::class);
+    
+    // Reschedule Routes
+    Route::apiResource('reschedules', \App\Http\Controllers\Admin\RescheduleController::class);
     
     // Laporan Routes
     Route::get('laporan/pendapatan', [\App\Http\Controllers\Admin\Laporan\PendapatanController::class, 'index']);

@@ -14,10 +14,10 @@ return new class extends Migration
         Schema::create('scheduleseats', function (Blueprint $table) {
             $table->id();
             $table->integer('schedule_id');
-            $table->integer('booking_Id');
+            $table->integer('booking_Id')->nullable();
             $table->integer('seat_id');
             $table->integer('schedule_rute_id')->nullable();
-            $table->integer('passengers_id');
+            $table->integer('passengers_id')->nullable();
             $table->boolean('is_available');
             $table->string('description');
             $table->integer('created_by_id');

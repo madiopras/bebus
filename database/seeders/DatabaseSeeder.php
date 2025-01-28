@@ -9,12 +9,20 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            RoleSeeder::class,
-            UserSeeder::class,
-            PermissionSeeder::class,
-            AssignRoleSeeder::class,
-            DefaultDataSeeder::class,
-            MedanLocationsSeeder::class,
+            UsersTableSeeder::class,
+            RolesTableSeeder::class,
+            PermissionsTableSeeder::class,
+            ModelHasRolesTableSeeder::class,
+            RoleHasPermissionsTableSeeder::class,
+            BusesTableSeeder::class,
+            LocationsTableSeeder::class,
+            RoutesTableSeeder::class,
+            SeatsTableSeeder::class,
+            SchedulesTableSeeder::class,
+            ScheduleRuteTableSeeder::class,
+            ScheduleSeatsTableSeeder::class,
+            BookingsTableSeeder::class,
+            PassengersTableSeeder::class,
         ]);
     }
 }
