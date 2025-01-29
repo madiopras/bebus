@@ -24,7 +24,7 @@ use App\Http\Controllers\Api\DashboardController;
 
 //Cek API
 Route::get('/health', function () {
-  return response()->json(['message' => 'OK'], 200);
+    return response()->json(['message' => 'OK'], 200);
 });
 
 // Register and Login

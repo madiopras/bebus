@@ -20,12 +20,11 @@ class MidtransSchedulerServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        $this->app->booted(function () {
+      $this->app->booted(function () {
             $schedule = $this->app->make(Schedule::class);
-            
             $schedule->command('midtrans:check-payment-status')
-                ->cron('*/8 * * * *')
-                ->withoutOverlapping(10)
+                ->everyMinute()
+                ->withoutOverlapping(5)
                 ->appendOutputTo(storage_path('logs/midtrans-payment-check.log'));
         });
 
