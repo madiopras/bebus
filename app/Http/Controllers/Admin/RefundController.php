@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Validator;
 
 class RefundController extends Controller
 {
@@ -81,25 +82,35 @@ class RefundController extends Controller
     public function store(Request $request)
     {
         try {
-            $validated = $request->validate([
+            $validator = Validator::make($request->all(), [
                 'booking_id' => 'required|exists:bookings,id',
-                'alasan' => 'required|string',
-                'persentase' => 'required|numeric|min:0|max:100'
+                'persentase' => 'required|numeric|min:0|max:100',
+                'alasan' => 'required|string'
             ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Validasi gagal',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $validated = $validator->validated();
 
             // Get booking data
             $booking = Bookings::findOrFail($validated['booking_id']);
-            
-            // Calculate estimasi refund
-            $estimasiRefund = $booking->final_price * ($validated['persentase'] / 100);
+
+            // Hitung estimasi refund (100% - persentase potongan)
+            $persentaseRefund = 100 - $validated['persentase'];
+            $estimasiRefund = ($persentaseRefund / 100) * $booking->final_price;
 
             // Create refund record
             $refund = Refund::create([
                 'booking_id' => $validated['booking_id'],
-                'tanggal' => now(),
+                'persentase' => $validated['persentase'],
                 'alasan' => $validated['alasan'],
-                'estimasi_refund' => $estimasiRefund,
-                'persentase' => $validated['persentase']
+                'estimasi_refund' => $estimasiRefund
             ]);
 
             // Update booking status
@@ -110,24 +121,10 @@ class RefundController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Berhasil membuat refund',
-                'data' => [
-                    'id' => $refund->id,
-                    'booking_id' => $refund->booking_id,
-                    'customer_name' => $booking->name,
-                    'tanggal' => $refund->tanggal,
-                    'alasan' => $refund->alasan,
-                    'estimasi_refund' => $refund->estimasi_refund,
-                    'persentase' => $refund->persentase
-                ]
+                'message' => 'Refund berhasil dibuat',
+                'data' => $refund
             ], 201);
 
-        } catch (ValidationException $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Validasi gagal',
-                'errors' => $e->errors()
-            ], 422);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,

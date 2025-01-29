@@ -25,7 +25,10 @@ class OrderController extends Controller
                 'b.bus_name as nama_bus',
                 'b.type_bus as tipe_bus',
                 'c.class_name as kelas_bus',
-                'users.name as created_by_name'
+                'users.name as created_by_name',
+                'rf.id as refund_id',
+                'rf.alasan as refund_alasan',
+                'rf.estimasi_refund as refund_amount'
             )
             ->leftJoin('schedule_rute as sr', 'bookings.schedule_id', '=', 'sr.id')
             ->leftJoin('routes as r', 'sr.route_id', '=', 'r.id')
@@ -35,6 +38,7 @@ class OrderController extends Controller
             ->leftJoin('buses as b', 's.bus_id', '=', 'b.id')
             ->leftJoin('classes as c', 'b.class_id', '=', 'c.id')
             ->leftJoin('users', 'bookings.created_by_id', '=', 'users.id')
+            ->leftJoin('refunds as rf', 'bookings.id', '=', 'rf.booking_id')
             ->with(['passengers' => function($query) {
                 $query->select('passengers.*', 'seats.seat_number')
                     ->leftJoin('seats', 'passengers.schedule_seat_id', '=', 'seats.id');
@@ -174,10 +178,14 @@ class OrderController extends Controller
                         ];
                     }),
                     'payment_info' => [
-                        'status' => $booking->payment_status,
+                        'status' => $booking->refund_id ? 'REFUND' : $booking->payment_status,
                         'amount' => number_format($booking->final_price, 0, ',', '.'),
                         'payment_id' => $booking->payment_id,
-                        'redirect_url' => $booking->payment_status === 'UNPAID' ? $booking->redirect_url : null
+                        'redirect_url' => $booking->payment_status === 'UNPAID' ? $booking->redirect_url : null,
+                        'refund_info' => $booking->refund_id ? [
+                            'alasan' => $booking->refund_alasan,
+                            'amount' => number_format($booking->refund_amount, 0, ',', '.')
+                        ] : null
                     ]
                 ];
             });
@@ -213,7 +221,10 @@ class OrderController extends Controller
                 'schedule.bus',
                 'user',
                 'createdBy'
-            ])->findOrFail($id);
+            ])
+            ->leftJoin('refunds', 'bookings.id', '=', 'refunds.booking_id')
+            ->select('bookings.*', 'refunds.id as refund_id', 'refunds.alasan as refund_alasan', 'refunds.estimasi_refund as refund_amount')
+            ->findOrFail($id);
 
             // Cek apakah schedule ada
             if (!$booking->schedule) {
@@ -253,10 +264,14 @@ class OrderController extends Controller
                         ];
                     }),
                     'payment_info' => [
-                        'status' => $booking->payment_status,
+                        'status' => $booking->refund_id ? 'REFUND' : $booking->payment_status,
                         'amount' => number_format($booking->final_price, 0, ',', '.'),
                         'payment_id' => $booking->payment_id,
-                        'payment_method' => $booking->payment_method ?? 'N/A'
+                        'payment_method' => $booking->payment_method ?? 'N/A',
+                        'refund_info' => $booking->refund_id ? [
+                            'alasan' => $booking->refund_alasan,
+                            'amount' => number_format($booking->refund_amount, 0, ',', '.')
+                        ] : null
                     ]
                 ];
 
@@ -305,10 +320,14 @@ class OrderController extends Controller
                     ];
                 }),
                 'payment_info' => [
-                    'status' => $booking->payment_status,
+                    'status' => $booking->refund_id ? 'REFUND' : $booking->payment_status,
                     'amount' => number_format($booking->final_price, 0, ',', '.'),
                     'payment_id' => $booking->payment_id,
-                    'payment_method' => $booking->payment_method ?? 'N/A'
+                    'payment_method' => $booking->payment_method ?? 'N/A',
+                    'refund_info' => $booking->refund_id ? [
+                        'alasan' => $booking->refund_alasan,
+                        'amount' => number_format($booking->refund_amount, 0, ',', '.')
+                    ] : null
                 ]
             ];
 

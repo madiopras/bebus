@@ -92,6 +92,9 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::get('laporan/pendapatan', [\App\Http\Controllers\Admin\Laporan\PendapatanController::class, 'index']);
     Route::get('laporan/pendapatan/download', [\App\Http\Controllers\Admin\Laporan\PendapatanController::class, 'download']);
 
+    Route::get('laporan/refund', [\App\Http\Controllers\Admin\Laporan\RefundController::class, 'index']);
+    Route::get('laporan/refund/download', [\App\Http\Controllers\Admin\Laporan\RefundController::class, 'download']);
+
     Route::get('laporan/pengeluaran', [\App\Http\Controllers\Admin\Laporan\PengeluaranController::class, 'index']);
     Route::get('laporan/pengeluaran/download', [\App\Http\Controllers\Admin\Laporan\PengeluaranController::class, 'download']);
 
@@ -99,6 +102,9 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::get('laporan/bersih/download', [\App\Http\Controllers\Admin\Laporan\BersihController::class, 'download']);
 
     Route::get('master/users/cek-username', [\App\Http\Controllers\Admin\Master\UsersController::class, 'cekUsername']);
+
+    Route::get('route-groups/list/routes', [\App\Http\Controllers\Admin\Master\RouteGroupController::class, 'getRouteList']);
+    Route::apiResource('route-groups', \App\Http\Controllers\Admin\Master\RouteGroupController::class);
 });
    
 });
