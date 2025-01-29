@@ -27,6 +27,13 @@ class BersihController extends Controller
         return $summary['total_pengeluaran'];
     }
 
+    private function getRefundData($startDate, $endDate)
+    {
+        $refundController = new RefundController();
+        $summary = $refundController->getSummaryData($startDate, $endDate);
+        return $summary['total_pendapatan_refund'];
+    }
+
     public function index(Request $request)
     {
         try {
@@ -36,13 +43,18 @@ class BersihController extends Controller
             // Get data
             $totalPendapatan = $this->getPendapatanData($startDate, $endDate);
             $totalPengeluaran = $this->getPengeluaranData($startDate, $endDate);
-            $labaBersih = $totalPendapatan - $totalPengeluaran;
+            $totalRefund = $this->getRefundData($startDate, $endDate);
+            $labaBersih = $totalPendapatan + $totalRefund - $totalPengeluaran;
 
             // Format response
             $data = [
                 [
                     'keterangan' => 'Total Pendapatan',
                     'jumlah' => $totalPendapatan
+                ],
+                [
+                    'keterangan' => 'Total Refund',
+                    'jumlah' => $totalRefund
                 ],
                 [
                     'keterangan' => 'Total Pengeluaran',
@@ -83,7 +95,8 @@ class BersihController extends Controller
             // Get data
             $totalPendapatan = $this->getPendapatanData($startDate, $endDate);
             $totalPengeluaran = $this->getPengeluaranData($startDate, $endDate);
-            $labaBersih = $totalPendapatan - $totalPengeluaran;
+            $totalRefund = $this->getRefundData($startDate, $endDate);
+            $labaBersih = $totalPendapatan + $totalRefund - $totalPengeluaran;
 
             // Create new spreadsheet
             $spreadsheet = new Spreadsheet();
@@ -130,8 +143,9 @@ class BersihController extends Controller
             // Fill data
             $data = [
                 [1, 'Total Pendapatan', $totalPendapatan],
-                [2, 'Total Pengeluaran', $totalPengeluaran],
-                [3, 'Laba Bersih', $labaBersih]
+                [2, 'Total Refund', $totalRefund],
+                [3, 'Total Pengeluaran', $totalPengeluaran],
+                [4, 'Laba Bersih', $labaBersih]
             ];
 
             $row = 5;

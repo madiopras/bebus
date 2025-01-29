@@ -32,24 +32,28 @@ class BookingTransferController extends Controller
             // Format nomor telepon (hilangkan awalan 0 dan tambahkan 62)
             $phone = preg_replace('/^0/', '62', $to);
             
-            $url = 'https://okechat.com/send-message';
-            $payload = [
-                'api_key' => 'GpFwpw3SaLQ9K9d25Jwuge7zWtkxcj',
-                'sender' => '6285600121760',
-                'number' => '6281396433364',
-                'media_type' => 'text',
-                'message' => $message
+            $url = config('services.wablas.url') . '/send-message';
+            $headers = [
+                'Authorization' => config('services.wablas.token'),
+                'Accept' => 'application/json',
+                'Content-Type' => 'application/json'
             ];
 
-            $response = Http::post($url, $payload);
+            $payload = [
+                'phone' => $phone,
+                'message' => $message,
+                'isGroup' => false
+            ];
 
-            Log::info('Okechat API Response', [
+            $response = Http::withHeaders($headers)->post($url, $payload);
+
+            Log::info('Wablas API Response', [
                 'status_code' => $response->status(),
                 'body' => $response->json()
             ]);
 
             if (!$response->successful()) {
-                Log::error('Okechat API Error:', [
+                Log::error('Wablas API Error:', [
                     'status' => $response->status(),
                     'response' => $response->json()
                 ]);
@@ -59,7 +63,7 @@ class BookingTransferController extends Controller
             return true;
 
         } catch (\Exception $e) {
-            Log::error('Okechat Exception:', [
+            Log::error('Wablas Exception:', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
@@ -185,7 +189,7 @@ class BookingTransferController extends Controller
                 . "Hai {$booking->name},\n"
                 . "Pembayaran tiket bus Anda telah berhasil dikonfirmasi.\n\n"
                 . "🎫 *Detail Booking*\n"
-                . "Booking ID: BOOK-{$booking->id}\n"
+                . "Booking ID: {$booking->payment_id}\n"
                 . "Total Pembayaran: Rp " . number_format($booking->final_price, 0, ',', '.') . "\n\n"
                 . "Terima kasih telah menggunakan layanan kami! 🙏";
         $this->sendWhatsAppMessage($booking->phone_number, $message);
@@ -197,7 +201,7 @@ class BookingTransferController extends Controller
                 . "Hai {$booking->name},\n"
                 . "Mohon maaf, pembayaran tiket bus Anda tidak berhasil.\n\n"
                 . "🎫 *Detail Booking*\n"
-                . "Booking ID: BOOK-{$booking->id}\n"
+                . "Booking ID: {$booking->payment_id}\n"
                 . "Total: Rp " . number_format($booking->final_price, 0, ',', '.') . "\n\n"
                 . "Silakan lakukan pemesanan ulang. Terima kasih! 🙏";
         $this->sendWhatsAppMessage($booking->phone_number, $message);
@@ -605,7 +609,7 @@ class BookingTransferController extends Controller
                     . "Hai {$request->booker['name']},\n"
                     . "Terima kasih telah melakukan pemesanan tiket bus. Berikut detail pesanan Anda:\n\n"
                     . "🎫 *Detail Booking*\n"
-                    . "Booking ID: BOOK-{$booking->id}\n"
+                    . "Booking ID: {$booking->payment_id}\n"
                     . "Total Pembayaran: Rp " . number_format($totalPrice, 0, ',', '.') . "\n"
                     . "Jumlah Kursi: " . count($request->passengers) . "\n\n"
                     . "💳 *Instruksi Pembayaran*\n"
@@ -750,7 +754,7 @@ class BookingTransferController extends Controller
                             . "Hai {$booking->name},\n"
                             . "Pembayaran tiket bus Anda telah berhasil dikonfirmasi.\n\n"
                             . "🎫 *Detail Booking*\n"
-                            . "Booking ID: BOOK-{$booking->id}\n"
+                            . "Booking ID: {$booking->payment_id}\n"
                             . "Total Pembayaran: Rp " . number_format($booking->final_price, 0, ',', '.') . "\n\n"
                             . "Terima kasih telah menggunakan layanan kami! 🙏";
                     $this->sendWhatsAppMessage($booking->phone_number, $message);
@@ -776,7 +780,7 @@ class BookingTransferController extends Controller
                             . "Hai {$booking->name},\n"
                             . "Mohon maaf, pembayaran tiket bus Anda tidak berhasil.\n\n"
                             . "🎫 *Detail Booking*\n"
-                            . "Booking ID: BOOK-{$booking->id}\n"
+                            . "Booking ID: {$booking->payment_id}\n"
                             . "Total: Rp " . number_format($booking->final_price, 0, ',', '.') . "\n\n"
                             . "Silakan lakukan pemesanan ulang. Terima kasih! 🙏";
                     $this->sendWhatsAppMessage($booking->phone_number, $message);
@@ -1060,7 +1064,7 @@ class BookingTransferController extends Controller
                     . "Hai {$request->booker['name']},\n"
                     . "Terima kasih telah melakukan pemesanan tiket bus. Berikut detail pesanan Anda:\n\n"
                     . "🎫 *Detail Booking*\n"
-                    . "Booking ID: BOOK-{$booking->id}\n"
+                    . "Booking ID: {$booking->payment_id}\n"
                     . "Subtotal: Rp " . number_format($basePrice, 0, ',', '.') . "\n"
                     . ($adminFee > 0 ? "Biaya Admin: Rp " . number_format($adminFee, 0, ',', '.') . "\n" : "")
                     . "Total Pembayaran: Rp " . number_format($totalPrice, 0, ',', '.') . "\n"
