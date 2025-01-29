@@ -24,9 +24,17 @@ class MidtransSchedulerServiceProvider extends ServiceProvider
             $schedule = $this->app->make(Schedule::class);
             
             $schedule->command('midtrans:check-payment-status')
-                ->everyMinute()
-                ->withoutOverlapping(5)
+                ->cron('*/8 * * * *')
+                ->withoutOverlapping(10)
                 ->appendOutputTo(storage_path('logs/midtrans-payment-check.log'));
         });
+
+        //$schedule->command('midtrans:check-payment-status')
+            //->cron('*/8 * * * *')
+            //->withoutOverlapping(10);
+            //->appendOutputTo(storage_path('logs/midtrans-payment-check.log'));
+    //$schedule->command('check:midtrans-payment-status')->hourly(); // Setiap 8 Menit
+    // Ganti everyMinute() sesuai kebutuhan Anda everyFiveMinutes(), hourly(), daily(), everyMinute()
+
     }
 }
