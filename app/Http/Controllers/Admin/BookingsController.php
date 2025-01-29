@@ -8,6 +8,8 @@ use App\Http\Requests\UpdateBookingRequest;
 use App\Models\Bookings;
 use App\Models\MidtransLog;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class BookingsController extends Controller
 {
@@ -188,6 +190,227 @@ class BookingsController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Gagal mengambil data pembayaran',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getBookingsThreeDays()
+    {
+        try {
+            $threeDaysFromNow = now()->addDays(3);
+            
+            $bookings = Bookings::with(['passengers'])
+                ->join('schedule_rute', 'bookings.schedule_id', '=', 'schedule_rute.id')
+                ->join('schedules', 'schedule_rute.schedule_id', '=', 'schedules.id')
+                ->join('buses', 'schedules.bus_id', '=', 'buses.id')
+                ->join('classes', 'buses.class_id', '=', 'classes.id')
+                ->join('routes', 'schedule_rute.route_id', '=', 'routes.id')
+                ->join('locations as l1', 'routes.start_location_id', '=', 'l1.id')
+                ->join('locations as l2', 'routes.end_location_id', '=', 'l2.id')
+                ->where('schedule_rute.departure_time', '>', $threeDaysFromNow)
+                ->where('bookings.payment_status', 'PAID')
+                ->select(
+                    'bookings.*', 
+                    'schedule_rute.departure_time',
+                    'schedule_rute.arrival_time',
+                    'schedule_rute.price_rute',
+                    'buses.bus_name',
+                    'buses.bus_number',
+                    'classes.class_name',
+                    'l1.name as start_location',
+                    'l2.name as end_location'
+                )
+                ->get();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Berhasil mendapatkan data booking 3 hari kedepan',
+                'data' => $bookings->map(function($booking) {
+                    return [
+                        'booking_id' => $booking->id,
+                        'customer_name' => $booking->name,
+                        'phone_number' => $booking->phone_number,
+                        'email' => $booking->email,
+                        'departure_time' => $booking->departure_time,
+                        'arrival_time' => $booking->arrival_time,
+                        'payment_id' => $booking->payment_id,
+                        'price' => $booking->final_price,
+                        'bus_info' => [
+                            'name' => $booking->bus_name,
+                            'number' => $booking->bus_number,
+                            'class' => $booking->class_name
+                        ],
+                        'route' => $booking->start_location . ' - ' . $booking->end_location,
+                        'passengers' => $booking->passengers->map(function($passenger) {
+                            return [
+                                'name' => $passenger->name,
+                                'seat_number' => $passenger->schedule_seat_id
+                            ];
+                        })
+                    ];
+                })
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('Get Bookings Three Days Error:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Gagal mendapatkan data booking',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getBookingsOneDay()
+    {
+        try {
+            $oneDayFromNow = now()->addDay();
+            
+            $bookings = Bookings::with(['passengers'])
+                ->join('schedule_rute', 'bookings.schedule_id', '=', 'schedule_rute.id')
+                ->join('schedules', 'schedule_rute.schedule_id', '=', 'schedules.id')
+                ->join('buses', 'schedules.bus_id', '=', 'buses.id')
+                ->join('classes', 'buses.class_id', '=', 'classes.id')
+                ->join('routes', 'schedule_rute.route_id', '=', 'routes.id')
+                ->join('locations as l1', 'routes.start_location_id', '=', 'l1.id')
+                ->join('locations as l2', 'routes.end_location_id', '=', 'l2.id')
+                ->where('schedule_rute.departure_time', '>', $oneDayFromNow)
+                ->where('bookings.payment_status', 'PAID')
+                ->select(
+                    'bookings.*', 
+                    'schedule_rute.departure_time',
+                    'schedule_rute.arrival_time',
+                    'schedule_rute.price_rute',
+                    'buses.bus_name',
+                    'buses.bus_number',
+                    'classes.class_name',
+                    'l1.name as start_location',
+                    'l2.name as end_location'
+                )
+                ->get();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Berhasil mendapatkan data booking 1 hari kedepan',
+                'data' => $bookings->map(function($booking) {
+                    return [
+                        'booking_id' => $booking->id,
+                        'customer_name' => $booking->name,
+                        'phone_number' => $booking->phone_number,
+                        'email' => $booking->email,
+                        'departure_time' => $booking->departure_time,
+                        'arrival_time' => $booking->arrival_time,
+                        'payment_id' => $booking->payment_id,
+                        'price' => $booking->final_price,
+                        'bus_info' => [
+                            'name' => $booking->bus_name,
+                            'number' => $booking->bus_number,
+                            'class' => $booking->class_name
+                        ],
+                        'route' => $booking->start_location . ' - ' . $booking->end_location,
+                        'passengers' => $booking->passengers->map(function($passenger) {
+                            return [
+                                'name' => $passenger->name,
+                                'seat_number' => $passenger->schedule_seat_id
+                            ];
+                        })
+                    ];
+                })
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('Get Bookings One Day Error:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Gagal mendapatkan data booking',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getBookingsByClass(Request $request)
+    {
+        try {
+            $bookingId = $request->query('booking_id');
+            if (!$bookingId) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Booking ID harus disediakan'
+                ], 400);
+            }
+
+            $oneDayFromNow = now()->addDay();
+            $thirtyDaysFromNow = now()->addDays(30);
+
+            // Dapatkan class_id dari booking yang dimaksud
+            $referenceBooking = Bookings::join('schedule_rute', 'bookings.schedule_id', '=', 'schedule_rute.id')
+                ->join('schedules', 'schedule_rute.schedule_id', '=', 'schedules.id')
+                ->join('buses', 'schedules.bus_id', '=', 'buses.id')
+                ->select('buses.class_id')
+                ->where('bookings.id', $bookingId)
+                ->firstOrFail();
+
+            // Dapatkan semua jadwal rute dengan class yang sama
+            $schedules = \App\Models\ScheduleRute::query()
+                ->join('schedules', 'schedule_rute.schedule_id', '=', 'schedules.id')
+                ->join('buses', 'schedules.bus_id', '=', 'buses.id')
+                ->join('classes', 'buses.class_id', '=', 'classes.id')
+                ->join('routes', 'schedule_rute.route_id', '=', 'routes.id')
+                ->join('locations as l1', 'routes.start_location_id', '=', 'l1.id')
+                ->join('locations as l2', 'routes.end_location_id', '=', 'l2.id')
+                ->where('buses.class_id', $referenceBooking->class_id)
+                ->where('schedule_rute.is_active', true)
+                ->whereBetween('schedule_rute.departure_time', [$oneDayFromNow, $thirtyDaysFromNow])
+                ->select(
+                    'schedule_rute.id',
+                    'schedule_rute.departure_time',
+                    'schedule_rute.arrival_time',
+                    'schedule_rute.price_rute',
+                    'buses.bus_name',
+                    'buses.bus_number',
+                    'classes.class_name',
+                    'l1.name as start_location',
+                    'l2.name as end_location'
+                )
+                ->get();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Berhasil mendapatkan jadwal dengan class yang sama',
+                'data' => $schedules->map(function($schedule) {
+                    return [
+                        'schedule_id' => $schedule->id,
+                        'departure_time' => $schedule->departure_time,
+                        'arrival_time' => $schedule->arrival_time,
+                        'price' => $schedule->price_rute,
+                        'bus_info' => [
+                            'name' => $schedule->bus_name,
+                            'number' => $schedule->bus_number,
+                            'class' => $schedule->class_name
+                        ],
+                        'route' => $schedule->start_location . ' - ' . $schedule->end_location
+                    ];
+                })
+            ], 200);
+
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Booking tidak ditemukan'
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Gagal mendapatkan data jadwal',
                 'error' => $e->getMessage()
             ], 500);
         }

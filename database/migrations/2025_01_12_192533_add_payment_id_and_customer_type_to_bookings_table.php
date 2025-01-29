@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::table('bookings', function (Blueprint $table) {
             $table->foreignId('payment_id')->nullable()->constrained('payments')->nullOnDelete();
-            $table->string('customer_type')->nullable();
         });
     }
 
@@ -24,7 +23,7 @@ return new class extends Migration
     {
         Schema::table('bookings', function (Blueprint $table) {
             $table->dropForeign(['payment_id']);
-            $table->dropColumn(['payment_id', 'customer_type']);
+            $table->dropColumn('payment_id');
         });
     }
 };
