@@ -185,4 +185,85 @@ class ScheduleMasterController extends Controller
             ], 500);
         }
     }
+
+    public function getScheduleByDate(Request $request)
+    {
+        try {
+            $dateFilter = $request->input('date', now()->format('Y-m-d'));
+            $scheduleRuteId = $request->input('schedule_rute_id', 0);
+
+            // Get Locations
+            $locations = Locations::select('id', 'name')->get();
+
+            // Get Buses with schedules
+            $buses = Buses::select(
+                'buses.id',
+                'buses.bus_name',
+                DB::raw("CASE 
+                    WHEN schedules.arrival_time >= '{$dateFilter}' AND schedules.id != {$scheduleRuteId} THEN schedules.departure_time
+                    ELSE NULL 
+                END as departure_time"),
+                DB::raw("CASE 
+                    WHEN schedules.arrival_time >= '{$dateFilter}' AND schedules.id != {$scheduleRuteId} THEN schedules.arrival_time
+                    ELSE NULL 
+                END as arrival_time"),
+                'classes.class_name'
+            )
+            ->distinct()
+            ->leftJoin('schedules', 'buses.id', '=', 'schedules.bus_id')
+            ->leftJoin('classes', 'buses.class_id', '=', 'classes.id')
+            ->where('buses.is_active', 1)
+            ->get();
+
+            // Get Drivers (Operator Bus)
+            $drivers = User::select(
+                'users.id',
+                'users.name',
+                DB::raw("CASE 
+                    WHEN schedules.arrival_time >= '{$dateFilter}' AND schedules.id != {$scheduleRuteId} THEN schedules.departure_time
+                    ELSE NULL 
+                END as departure_time"),
+                DB::raw("CASE 
+                    WHEN schedules.arrival_time >= '{$dateFilter}' AND schedules.id != {$scheduleRuteId} THEN schedules.arrival_time
+                    ELSE NULL 
+                END as arrival_time")
+            )
+            ->distinct()
+            ->leftJoin('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
+            ->leftJoin('roles', 'model_has_roles.role_id', '=', 'roles.id')
+            ->leftJoin('schedules', 'users.id', '=', 'schedules.supir_id')
+            ->where('roles.name', '=', 'Operator Bus')
+            ->where('users.is_active', 1)
+            ->get();
+
+            // Get Routes
+            $routes = Routes::all();
+
+            // Get Special Days with start_date greater than input date
+            $specialDays = SpecialDays::where('start_date', '>=', $dateFilter)->get();
+
+            // Get Facilities
+            $facilities = DB::table('facilities')
+                ->select('id', 'name')
+                ->get();
+
+            return response()->json([
+                'status' => true,
+                'data' => [
+                    'locations' => $locations,
+                    'buses' => $buses,
+                    'drivers' => $drivers,
+                    'routes' => $routes,
+                    'special_days' => $specialDays,
+                    'facilities' => $facilities
+                ]
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Gagal mengambil data master',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 } 

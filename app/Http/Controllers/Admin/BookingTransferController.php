@@ -18,6 +18,8 @@ use Midtrans\Snap;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class BookingTransferController extends Controller
 {
@@ -183,16 +185,414 @@ class BookingTransferController extends Controller
         }
     }
 
+    private function generatePDF($booking)
+    {
+        try {
+            Log::info('Starting PDF generation', [
+                'booking_id' => $booking->id,
+                'payment_id' => $booking->payment_id
+            ]);
+
+            // Ambil data schedule, bus, dan lokasi dengan join yang benar
+            $scheduleRute = ScheduleRute::select(
+                'schedule_rute.*',
+                'schedules.departure_time',
+                'schedules.arrival_time',
+                'buses.bus_number',
+                'buses.bus_name',
+                'classes.class_name',
+                'start_loc.name as origin_name',
+                'end_loc.name as destination_name'
+            )
+            ->join('schedules', 'schedule_rute.schedule_id', '=', 'schedules.id')
+            ->join('buses', 'schedules.bus_id', '=', 'buses.id')
+            ->join('classes', 'buses.class_id', '=', 'classes.id')
+            ->join('routes', 'schedule_rute.route_id', '=', 'routes.id')
+            ->join('locations as start_loc', 'routes.start_location_id', '=', 'start_loc.id')
+            ->join('locations as end_loc', 'routes.end_location_id', '=', 'end_loc.id')
+            ->where('schedule_rute.id', $booking->schedule_id)
+            ->first();
+
+            if (!$scheduleRute) {
+                throw new \Exception('Schedule route not found for booking ID: ' . $booking->id);
+            }
+
+            // Ambil data schedule seats dengan informasi lengkap
+            $scheduleSeats = DB::table('scheduleseats')
+                ->select(
+                    'scheduleseats.*',
+                    'seats.seat_number',
+                    'passengers.name',
+                    'passengers.gender',
+                    'passengers.phone_number'
+                )
+                ->join('seats', 'seats.id', '=', 'scheduleseats.seat_id')
+                ->join('passengers', 'passengers.id', '=', 'scheduleseats.passengers_id')
+                ->where('scheduleseats.booking_Id', $booking->id)
+                ->get();
+
+            Log::info('Data loaded:', [
+                'booking' => $booking->toArray(),
+                'schedule_seats' => $scheduleSeats,
+                'schedule_rute' => $scheduleRute->toArray()
+            ]);
+            
+            // Generate nama file
+            $filename = 'ticket_' . $booking->payment_id . '.pdf';
+            
+            // Data untuk template
+            $templateData = [
+                'booking' => $booking,
+                'scheduleSeats' => $scheduleSeats,
+                'scheduleRute' => $scheduleRute
+            ];
+            
+            Log::info('Template data:', $templateData);
+            
+            try {
+                // Generate PDF dengan margin yang sesuai
+                $pdf = PDF::loadView('pdf.ticket', $templateData);
+                $pdf->setPaper('A4', 'portrait');
+                
+                // Pastikan direktori ada
+                $directory = public_path('storage/tickets');
+                if (!file_exists($directory)) {
+                    mkdir($directory, 0777, true);
+                }
+                
+                Log::info('Directory check:', [
+                    'directory' => $directory,
+                    'exists' => file_exists($directory),
+                    'writable' => is_writable($directory)
+                ]);
+                
+                $filePath = $directory . '/' . $filename;
+                $pdfOutput = $pdf->output();
+                
+                Log::info('PDF output generated', [
+                    'output_size' => strlen($pdfOutput)
+                ]);
+                
+                file_put_contents($filePath, $pdfOutput);
+                
+                if (!file_exists($filePath)) {
+                    throw new \Exception('Failed to save PDF file: ' . $filePath);
+                }
+                
+                Log::info('PDF file saved successfully', [
+                    'path' => $filePath,
+                    'size' => filesize($filePath)
+                ]);
+                
+                return [
+                    'filename' => $filename,
+                    'path' => $filePath
+                ];
+                
+            } catch (\Exception $e) {
+                Log::error('PDF generation error:', [
+                    'message' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+                throw $e;
+            }
+            
+        } catch (\Exception $e) {
+            Log::error('Error in generatePDF:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
+        }
+    }
+
+    public function testGeneratePDF($bookingId)
+    {
+        try {
+            Log::info('Starting test PDF generation', [
+                'booking_id' => $bookingId
+            ]);
+
+            // Cari booking dengan eager loading yang benar
+            $booking = Bookings::with(['user', 'createdBy'])->findOrFail($bookingId);
+
+            // Generate PDF dan dapatkan informasi file
+            $pdfInfo = $this->generatePDF($booking);
+
+            // Ambil data schedule, bus, dan lokasi dengan join yang benar
+            $scheduleRute = ScheduleRute::select(
+                'schedule_rute.*',
+                'schedules.departure_time',
+                'schedules.arrival_time',
+                'buses.bus_number',
+                'buses.bus_name',
+                'classes.class_name',
+                'start_loc.name as origin_name',
+                'end_loc.name as destination_name'
+            )
+            ->join('schedules', 'schedule_rute.schedule_id', '=', 'schedules.id')
+            ->join('buses', 'schedules.bus_id', '=', 'buses.id')
+            ->join('classes', 'buses.class_id', '=', 'classes.id')
+            ->join('routes', 'schedule_rute.route_id', '=', 'routes.id')
+            ->join('locations as start_loc', 'routes.start_location_id', '=', 'start_loc.id')
+            ->join('locations as end_loc', 'routes.end_location_id', '=', 'end_loc.id')
+            ->where('schedule_rute.id', $booking->schedule_id)
+            ->first();
+
+            if (!$scheduleRute) {
+                throw new \Exception('Schedule route not found for booking ID: ' . $booking->id);
+            }
+
+            // Ambil data schedule seats dengan informasi lengkap
+            $scheduleSeats = DB::table('scheduleseats')
+                ->select(
+                    'scheduleseats.*',
+                    'seats.seat_number',
+                    'passengers.name',
+                    'passengers.gender',
+                    'passengers.phone_number'
+                )
+                ->join('seats', 'seats.id', '=', 'scheduleseats.seat_id')
+                ->join('passengers', 'passengers.id', '=', 'scheduleseats.passengers_id')
+                ->where('scheduleseats.booking_Id', $booking->id)
+                ->get();
+
+            // Format data untuk response
+            $responseData = [
+                'status' => true,
+                'message' => 'PDF generated successfully',
+                'pdf_info' => [
+                    'filename' => $pdfInfo['filename'],
+                    'path' => $pdfInfo['path'],
+                    'file_exists' => file_exists($pdfInfo['path']),
+                    'file_size' => filesize($pdfInfo['path']),
+                    'public_url' => url('storage/tickets/' . $pdfInfo['filename'])
+                ],
+                'ticket_data' => [
+                    'id' => $booking->id,
+                    'booking_info' => [
+                        'booker_name' => $booking->name,
+                        'email' => $booking->email,
+                        'phone' => $booking->phone_number,
+                        'booking_date' => Carbon::parse($booking->created_at)->format('d M Y H:i'),
+                        'customer_type' => $booking->customer_type,
+                        'created_by' => $booking->createdBy ? $booking->createdBy->name : null
+                    ],
+                    'schedule_info' => [
+                        'route' => $scheduleRute->origin_name . ' - ' . $scheduleRute->destination_name,
+                        'bus_info' => [
+                            'kode' => $scheduleRute->bus_number,
+                            'nama' => $scheduleRute->bus_name,
+                            'tipe' => 'SHD Bus',
+                            'kelas' => $scheduleRute->class_name
+                        ],
+                        'departure_time' => Carbon::parse($scheduleRute->departure_time)->format('d M Y H:i'),
+                        'arrival_time' => Carbon::parse($scheduleRute->arrival_time)->format('d M Y H:i'),
+                        'time_until_departure' => Carbon::parse($scheduleRute->departure_time)->diffForHumans([
+                            'syntax' => \Carbon\CarbonInterface::DIFF_ABSOLUTE,
+                            'parts' => 2
+                        ]),
+                        'status' => Carbon::parse($scheduleRute->departure_time)->isFuture() ? 'AKAN DATANG' : 'SELESAI'
+                    ],
+                    'passengers' => $scheduleSeats->map(function($seat) {
+                        return [
+                            'name' => $seat->name,
+                            'seat_number' => str_pad($seat->seat_number, 2, '0', STR_PAD_LEFT),
+                            'gender' => $seat->gender == 'L' ? 'Laki-laki' : 'Perempuan',
+                            'phone' => $seat->phone_number
+                        ];
+                    }),
+                    'payment_info' => [
+                        'status' => $booking->payment_status,
+                        'amount' => number_format($booking->final_price, 0, ',', '.'),
+                        'payment_id' => $booking->payment_id,
+                        'redirect_url' => $booking->redirect_url,
+                        'payment_method' => $booking->payment_method,
+                        'refund_info' => null
+                    ]
+                ]
+            ];
+
+            return response()->json($responseData);
+
+        } catch (\Exception $e) {
+            Log::error('Test PDF generation failed:', [
+                'booking_id' => $bookingId,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to generate PDF: ' . $e->getMessage(),
+                'error_details' => [
+                    'message' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine()
+                ]
+            ], 500);
+        }
+    }
+
+    private function sendWhatsAppFile($to, $filePath, $caption)
+    {
+        try {
+            // Format nomor telepon
+            $phone = preg_replace('/^0/', '62', $to);
+            
+            // Cek apakah file ada
+            if (!file_exists($filePath)) {
+                throw new \Exception('File not found: ' . $filePath);
+            }
+
+            // Persiapkan file untuk dikirim
+            $fileContent = file_get_contents($filePath);
+            if ($fileContent === false) {
+                throw new \Exception('Failed to read file: ' . $filePath);
+            }
+
+            $token = env('WABLAS_TOKEN');
+            $url = rtrim(env('WABLAS_URL'), '/');
+
+            // Persiapkan data untuk curl
+            $data = [
+                'phone' => $phone,
+                'document' => new \CURLFile($filePath),
+                'caption' => $caption
+            ];
+
+            // Inisialisasi CURL
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url . '/send-document');
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Authorization: ' . $token
+            ]);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+
+            // Log request untuk debugging
+            Log::info('Sending document to Wablas:', [
+                'url' => $url . '/send-document',
+                'phone' => $phone,
+                'file_path' => $filePath,
+                'caption' => $caption
+            ]);
+
+            // Eksekusi CURL
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            
+            // Log response untuk debugging
+            Log::info('Wablas Document API Response:', [
+                'http_code' => $httpCode,
+                'response' => $response,
+                'curl_error' => curl_error($ch)
+            ]);
+
+            curl_close($ch);
+
+            if ($httpCode !== 200) {
+                throw new \Exception('Failed to send document. HTTP Code: ' . $httpCode . ', Response: ' . $response);
+            }
+
+            $responseData = json_decode($response, true);
+            if (!$responseData || !isset($responseData['status']) || $responseData['status'] !== true) {
+                throw new \Exception('Failed to send document: ' . ($responseData['message'] ?? 'Unknown error'));
+            }
+
+            return true;
+
+        } catch (\Exception $e) {
+            Log::error('Wablas Document API Error:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'phone' => $to,
+                'file_path' => $filePath
+            ]);
+            return false;
+        }
+    }
+
     private function sendSuccessNotification($booking)
     {
-        $message = "✅ *Pembayaran Berhasil*\n\n"
-                . "Hai {$booking->name},\n"
-                . "Pembayaran tiket bus Anda telah berhasil dikonfirmasi.\n\n"
-                . "🎫 *Detail Booking*\n"
-                . "Booking ID: {$booking->payment_id}\n"
-                . "Total Pembayaran: Rp " . number_format($booking->final_price, 0, ',', '.') . "\n\n"
-                . "Terima kasih telah menggunakan layanan kami! 🙏";
-        $this->sendWhatsAppMessage($booking->phone_number, $message);
+        try {
+            Log::info('Starting success notification process for booking', [
+                'booking_id' => $booking->id,
+                'payment_id' => $booking->payment_id
+            ]);
+
+            // Generate PDF
+            $pdfInfo = $this->generatePDF($booking);
+            
+            // Path file PDF
+            $pdfPath = public_path('storage/tickets/ticket_' . $booking->payment_id . '.pdf');
+            
+            // Verifikasi file PDF
+            if (!file_exists($pdfPath)) {
+                throw new \Exception('PDF file not found after generation: ' . $pdfPath);
+            }
+            
+            Log::info('PDF verification', [
+                'path' => $pdfPath,
+                'exists' => file_exists($pdfPath),
+                'size' => filesize($pdfPath)
+            ]);
+            
+            // Format pesan WhatsApp
+            $message = "✅ *Pembayaran Berhasil*\n\n"
+                    . "Hai {$booking->name},\n"
+                    . "Pembayaran tiket bus Anda telah berhasil dikonfirmasi.\n\n"
+                    . "🎫 *Detail Booking*\n"
+                    . "Booking ID: {$booking->payment_id}\n"
+                    . "Total Pembayaran: Rp " . number_format($booking->final_price, 0, ',', '.') . "\n\n"
+                    . "E-ticket Anda akan dikirim setelah pesan ini.\n\n"
+                    . "Terima kasih telah menggunakan layanan kami! 🙏";
+
+            // Kirim pesan teks terlebih dahulu
+            $this->sendWhatsAppMessage($booking->phone_number, $message);
+
+            // Tunggu sebentar sebelum mengirim file
+            sleep(2);
+
+            // Kirim file PDF
+            $caption = "E-Ticket Bus - " . $booking->payment_id;
+            $sent = $this->sendWhatsAppFile($booking->phone_number, $pdfPath, $caption);
+
+            if (!$sent) {
+                Log::error('Failed to send PDF ticket', [
+                    'booking_id' => $booking->id,
+                    'pdf_path' => $pdfPath
+                ]);
+            } else {
+                // Hapus file PDF setelah berhasil dikirim
+                if (file_exists($pdfPath)) {
+                    unlink($pdfPath);
+                    Log::info('PDF file deleted successfully', [
+                        'pdf_path' => $pdfPath
+                    ]);
+                }
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Error sending success notification:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'booking_id' => $booking->id
+            ]);
+            
+            // Pastikan file PDF dihapus meskipun terjadi error
+            $pdfPath = public_path('storage/tickets/ticket_' . $booking->payment_id . '.pdf');
+            if (file_exists($pdfPath)) {
+                unlink($pdfPath);
+                Log::info('PDF file deleted after error', [
+                    'pdf_path' => $pdfPath
+                ]);
+            }
+        }
     }
 
     private function sendFailureNotification($booking)
