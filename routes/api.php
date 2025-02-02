@@ -30,6 +30,7 @@ Route::get('guest/schedule-rutes', [ScheduleRuteController::class, 'getNameList'
 Route::get('guest/schedule-rutes/{id}/seat', [ScheduleRuteController::class, 'getSeats']);
 Route::post('guest/booking-transfer', [BookingTransferController::class, 'storeGuest']);
 Route::get('guest/check-payment/{id}', [BookingsController::class, 'show']);
+Route::get('notifikasi/check-payment/{id}', [BookingsController::class, 'checkPaymentStatus']);
 
 // Midtrans Callback Routes (No Auth Required)
 Route::post('/midtrans/notification', [BookingTransferController::class, 'handlePaymentNotification']);
