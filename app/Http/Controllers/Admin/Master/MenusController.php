@@ -83,4 +83,22 @@ class MenusController extends Controller
             return response()->json(['message' => 'Failed to delete menu', 'error' => $e->getMessage()], 500);
         }
     }
+
+    public function getAllMenus()
+    {
+        try {
+            $menus = Menu::select('id', 'menu_name', 'model_type')->get();
+
+            return response()->json([
+                'status' => true,
+                'data' => $menus->isEmpty() ? [] : $menus
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Gagal mengambil data menu',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

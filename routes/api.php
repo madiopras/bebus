@@ -36,6 +36,7 @@ Route::get('guest/schedule-rutes', [ScheduleRuteController::class, 'getNameList'
 Route::get('guest/schedule-rutes/{id}/seat', [ScheduleRuteController::class, 'getSeats']);
 Route::post('guest/booking-transfer', [BookingTransferController::class, 'storeGuest']);
 Route::get('guest/check-payment/{id}', [BookingsController::class, 'show']);
+Route::get('notifikasi/check-payment/{id}', [BookingsController::class, 'checkPaymentStatus']);
 
 // Midtrans Callback Routes (No Auth Required)
 Route::post('/midtrans/notification', [BookingTransferController::class, 'handlePaymentNotification']);
@@ -69,6 +70,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::apiResource('menus', \App\Http\Controllers\Admin\Master\MenusController::class);
     Route::get('schedule-master', [App\Http\Controllers\Admin\Master\ScheduleMasterController::class, 'index']);
     Route::get('schedule-master-update', [App\Http\Controllers\Admin\Master\ScheduleMasterController::class, 'update']);
+    Route::get('schedule-master-by-date', [App\Http\Controllers\Admin\Master\ScheduleMasterController::class, 'getScheduleByDate']);
     Route::get('schedule-rutes/{id}/seat', [ScheduleRuteController::class, 'getSeats']);
     Route::get('schedule-rute/manifest/{scheduleId}', [ScheduleRuteController::class, 'getManifest']);
     Route::apiResource('schedule-rutes', ScheduleRuteController::class);
@@ -111,6 +113,8 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
 
     Route::get('route-groups/list/routes', [\App\Http\Controllers\Admin\Master\RouteGroupController::class, 'getRouteList']);
     Route::apiResource('route-groups', \App\Http\Controllers\Admin\Master\RouteGroupController::class);
+
+    Route::get('/admin/menus/all', [App\Http\Controllers\Admin\Master\MenusController::class, 'getAllMenus']);
 });
    
 });

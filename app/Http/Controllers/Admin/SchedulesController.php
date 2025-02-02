@@ -207,19 +207,25 @@ class SchedulesController extends Controller
                 ], 422);
             }
 
-
             // Validasi waktu keberangkatan yang berselisih
-            $departureTimes = array_column($request->schedule_rutes, 'departure_time');
-            sort($departureTimes);
-            for ($i = 0; $i < count($departureTimes) - 1; $i++) {
-                $time1 = strtotime($departureTimes[$i]);
-                $time2 = strtotime($departureTimes[$i + 1]);
+            $routeGroups = [];
+            foreach ($request->schedule_rutes as $rute) {
+                $routeKey = $rute['route_id'];
+                $departureTime = $rute['departure_time'];
                 
-                // Jika waktu sama persis
-                if ($time1 === $time2) {
+                if (!isset($routeGroups[$routeKey])) {
+                    $routeGroups[$routeKey] = [];
+                }
+                
+                $routeGroups[$routeKey][] = $departureTime;
+            }
+
+            // Cek untuk setiap rute
+            foreach ($routeGroups as $routeId => $times) {
+                if (count($times) !== count(array_unique($times))) {
                     return response()->json([
                         'status' => false,
-                        'message' => 'Tidak boleh ada rute dengan waktu keberangkatan yang sama'
+                        'message' => 'Tidak boleh ada rute yang sama dengan waktu keberangkatan yang sama'
                     ], 422);
                 }
             }
@@ -295,20 +301,25 @@ class SchedulesController extends Controller
                 ], 422);
             }
 
-   
-
             // Validasi waktu keberangkatan yang berselisih
-            $departureTimes = array_column($request->schedule_rutes, 'departure_time');
-            sort($departureTimes);
-            for ($i = 0; $i < count($departureTimes) - 1; $i++) {
-                $time1 = strtotime($departureTimes[$i]);
-                $time2 = strtotime($departureTimes[$i + 1]);
+            $routeGroups = [];
+            foreach ($request->schedule_rutes as $id => $ruteData) {
+                $routeKey = $ruteData['route_id'];
+                $departureTime = $ruteData['departure_time'];
                 
-                // Jika waktu sama persis
-                if ($time1 === $time2) {
+                if (!isset($routeGroups[$routeKey])) {
+                    $routeGroups[$routeKey] = [];
+                }
+                
+                $routeGroups[$routeKey][] = $departureTime;
+            }
+
+            // Cek untuk setiap rute
+            foreach ($routeGroups as $routeId => $times) {
+                if (count($times) !== count(array_unique($times))) {
                     return response()->json([
                         'status' => false,
-                        'message' => 'Tidak boleh ada rute dengan waktu keberangkatan yang sama'
+                        'message' => 'Tidak boleh ada rute yang sama dengan waktu keberangkatan yang sama'
                     ], 422);
                 }
             }
