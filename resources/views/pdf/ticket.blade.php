@@ -313,8 +313,8 @@
                     </div>
                     <div class="info-section" style="margin-top: 8px;">
                         <div class="info-label">Kelas</div>
+                        <div class="info-value">{{ $scheduleRute->class_name }}</div>5
                         <div class="info-label">Nomor</div>
-                        <div class="info-value">{{ $scheduleRute->class_name }}</div>
                         <div class="info-value"> {{ $scheduleRute->bus_number }}</div>
                     </div>
                 </td>
@@ -372,7 +372,7 @@
                         <td>{{ $seat->gender == 'L' ? 'Tuan ' : 'Nona ' }}{{ $seat->name }}</td>
                         <td>Dewasa</td>
                         <td>KTP - {{ $seat->phone_number ?? '-' }}</td>
-                        <td>{{ $scheduleRute->class_name }} / {{ str_pad($seat->seat_number, 2, '0', STR_PAD_LEFT) }}</td>
+                        <td>{{ str_pad($seat->seat_number, 2, '0', STR_PAD_LEFT) }}</td>
                     </tr>
                     @endforeach
                 </tbody>
