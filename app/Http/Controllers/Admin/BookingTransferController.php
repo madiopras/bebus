@@ -451,8 +451,10 @@ class BookingTransferController extends Controller
                 throw new \Exception('Failed to read file: ' . $filePath);
             }
 
-            $token = env('WABLAS_TOKEN');
-            $url = rtrim(env('WABLAS_URL'), '/');
+            $token = config('services.wablas.token');
+            $baseUrl = rtrim(env('WABLAS_URL', 'https://tegal.wablas.com/api'), '/');
+            $endpoint = '/send-document';
+            $url = $baseUrl . $endpoint;
 
             // Persiapkan data untuk curl
             $data = [
@@ -463,7 +465,7 @@ class BookingTransferController extends Controller
 
             // Inisialisasi CURL
             $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $url . '/send-document');
+            curl_setopt($ch, CURLOPT_URL, $url);
             curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_HTTPHEADER, [
@@ -476,7 +478,7 @@ class BookingTransferController extends Controller
 
             // Log request untuk debugging
             Log::info('Sending document to Wablas:', [
-                'url' => $url . '/send-document',
+                'url' => $url,
                 'phone' => $phone,
                 'file_path' => $filePath,
                 'caption' => $caption
