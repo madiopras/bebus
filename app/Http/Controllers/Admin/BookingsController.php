@@ -351,15 +351,13 @@ class BookingsController extends Controller
             $oneDayFromNow = now()->addDay();
             $thirtyDaysFromNow = now()->addDays(30);
 
-            // Dapatkan class_id dari booking yang dimaksud
+            // Dapatkan route_id dari booking yang dimaksud
             $referenceBooking = Bookings::join('schedule_rute', 'bookings.schedule_id', '=', 'schedule_rute.id')
-                ->join('schedules', 'schedule_rute.schedule_id', '=', 'schedules.id')
-                ->join('buses', 'schedules.bus_id', '=', 'buses.id')
-                ->select('buses.class_id')
+                ->select('schedule_rute.route_id')
                 ->where('bookings.id', $bookingId)
                 ->firstOrFail();
 
-            // Dapatkan semua jadwal rute dengan class yang sama
+            // Dapatkan semua jadwal rute dengan rute yang sama
             $schedules = \App\Models\ScheduleRute::query()
                 ->join('schedules', 'schedule_rute.schedule_id', '=', 'schedules.id')
                 ->join('buses', 'schedules.bus_id', '=', 'buses.id')
@@ -367,7 +365,7 @@ class BookingsController extends Controller
                 ->join('routes', 'schedule_rute.route_id', '=', 'routes.id')
                 ->join('locations as l1', 'routes.start_location_id', '=', 'l1.id')
                 ->join('locations as l2', 'routes.end_location_id', '=', 'l2.id')
-                ->where('buses.class_id', $referenceBooking->class_id)
+                ->where('schedule_rute.route_id', $referenceBooking->route_id)
                 ->where('schedule_rute.is_active', true)
                 ->whereBetween('schedule_rute.departure_time', [$oneDayFromNow, $thirtyDaysFromNow])
                 ->select(
@@ -385,7 +383,7 @@ class BookingsController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Berhasil mendapatkan jadwal dengan class yang sama',
+                'message' => 'Berhasil mendapatkan jadwal dengan rute yang sama',
                 'data' => $schedules->map(function($schedule) {
                     return [
                         'schedule_id' => $schedule->id,
