@@ -106,8 +106,11 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::get('master/users/cek-username', [\App\Http\Controllers\Admin\Master\UsersController::class, 'cekUsername']);
 
     Route::get('route-groups/list/routes', [\App\Http\Controllers\Admin\Master\RouteGroupController::class, 'getRouteList']);
-    Route::apiResource('route-groups', \App\Http\Controllers\Admin\Master\RouteGroupController::class);
+    Route::get('route-groups/list', [\App\Http\Controllers\Admin\Master\RouteGroupController::class, 'getAllRouteGroups']);
+    Route::get('route-groups/detail/{id}', [\App\Http\Controllers\Admin\Master\RouteGroupController::class, 'getRouteGroupDetail']);
 
+
+    Route::apiResource('route-groups', \App\Http\Controllers\Admin\Master\RouteGroupController::class);
     Route::get('/admin/menus/all', [App\Http\Controllers\Admin\Master\MenusController::class, 'getAllMenus']);
 });
    
