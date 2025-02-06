@@ -313,7 +313,7 @@
                     </div>
                     <div class="info-section" style="margin-top: 8px;">
                         <div class="info-label">Kelas</div>
-                        <div class="info-value">{{ $scheduleRute->class_name }}</div>5
+                        <div class="info-value">{{ $scheduleRute->class_name }}</div>
                         <div class="info-label">Nomor</div>
                         <div class="info-value"> {{ $scheduleRute->bus_number }}</div>
                     </div>
@@ -325,8 +325,8 @@
                                 <div class="info-label">Keberangkatan</div>
                                 <div class="info-value">{{ $scheduleRute->origin_name }}</div>
                                 <div class="info-value" style="color: #1a237e; font-size: 11px;">
-                                    {{ Carbon::parse($scheduleRute->departure_time)->format('d M Y') }}<br>
-                                    {{ Carbon::parse($scheduleRute->departure_time)->format('H:i') }}
+                                    {{ Carbon::parse($scheduleRute->schedule_rute_departure_time)->format('d M Y') }}<br>
+                                    {{ Carbon::parse($scheduleRute->schedule_rute_departure_time)->format('H:i') }}
                                 </div>
                             </td>
                             <td width="20%" style="text-align: center; vertical-align: middle;">
@@ -336,15 +336,15 @@
                                 <div class="info-label">Kedatangan</div>
                                 <div class="info-value">{{ $scheduleRute->destination_name }}</div>
                                 <div class="info-value" style="color: #1a237e; font-size: 11px;">
-                                    {{ Carbon::parse($scheduleRute->arrival_time)->format('d M Y') }}<br>
-                                    {{ Carbon::parse($scheduleRute->arrival_time)->format('H:i') }}
+                                    {{ Carbon::parse($scheduleRute->schedule_rute_arrival_time)->format('d M Y') }}<br>
+                                    {{ Carbon::parse($scheduleRute->schedule_rute_arrival_time)->format('H:i') }}
                                 </div>
                             </td>
                         </tr>
                         <tr>
                             <td colspan="3" style="text-align: center; padding-top: 10px;">
                                 <div class="journey-time">
-                                    {{ Carbon::parse($scheduleRute->departure_time)->locale('id')->diffForHumans(Carbon::parse($scheduleRute->arrival_time), ['parts' => 2, 'join' => ' ', 'syntax' => \Carbon\CarbonInterface::DIFF_ABSOLUTE]) }}
+                                    {{ Carbon::parse($scheduleRute->schedule_rute_departure_time)->locale('id')->diffForHumans(Carbon::parse($scheduleRute->schedule_rute_arrival_time), ['parts' => 2, 'join' => ' ', 'syntax' => \Carbon\CarbonInterface::DIFF_ABSOLUTE]) }}
                                 </div>
                             </td>
                         </tr>
@@ -372,7 +372,7 @@
                         <td>{{ $seat->gender == 'L' ? 'Tuan ' : 'Nona ' }}{{ $seat->name }}</td>
                         <td>Dewasa</td>
                         <td>KTP - {{ $seat->phone_number ?? '-' }}</td>
-                        <td>{{ str_pad($seat->seat_number, 2, '0', STR_PAD_LEFT) }}</td>
+                        <td style="text-align: center;">{{ str_pad($seat->seat_number, 2, '0', STR_PAD_LEFT) }}</td>
                     </tr>
                     @endforeach
                 </tbody>
