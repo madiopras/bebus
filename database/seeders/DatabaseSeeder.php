@@ -23,6 +23,11 @@ class DatabaseSeeder extends Seeder
             ScheduleSeatsTableSeeder::class,
             BookingsTableSeeder::class,
             PassengersTableSeeder::class,
+            ClassesSeeder::class,
+            LocationsSeeder::class,
+            RoutesSeeder::class,
+            BusesSeeder::class,
+            SpecialDaysSeeder::class,
         ]);
     }
 }

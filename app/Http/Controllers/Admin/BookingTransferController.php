@@ -196,8 +196,8 @@ class BookingTransferController extends Controller
             // Ambil data schedule, bus, dan lokasi dengan join yang benar
             $scheduleRute = ScheduleRute::select(
                 'schedule_rute.*',
-                'schedules.departure_time',
-                'schedules.arrival_time',
+                'schedule_rute.departure_time as schedule_rute_departure_time',
+                'schedule_rute.arrival_time as schedule_rute_arrival_time',
                 'buses.bus_number',
                 'buses.bus_name',
                 'classes.class_name',
@@ -322,8 +322,8 @@ class BookingTransferController extends Controller
             // Ambil data schedule, bus, dan lokasi dengan join yang benar
             $scheduleRute = ScheduleRute::select(
                 'schedule_rute.*',
-                'schedules.departure_time',
-                'schedules.arrival_time',
+                'schedule_rute.departure_time as schedule_rute_departure_time',
+                'schedule_rute.arrival_time as schedule_rute_arrival_time',
                 'buses.bus_number',
                 'buses.bus_name',
                 'classes.class_name',
@@ -386,13 +386,13 @@ class BookingTransferController extends Controller
                             'tipe' => 'SHD Bus',
                             'kelas' => $scheduleRute->class_name
                         ],
-                        'departure_time' => Carbon::parse($scheduleRute->departure_time)->format('d M Y H:i'),
-                        'arrival_time' => Carbon::parse($scheduleRute->arrival_time)->format('d M Y H:i'),
-                        'time_until_departure' => Carbon::parse($scheduleRute->departure_time)->diffForHumans([
+                        'departure_time' => Carbon::parse($scheduleRute->schedule_rute_departure_time)->format('d M Y H:i'),
+                        'arrival_time' => Carbon::parse($scheduleRute->schedule_rute_arrival_time)->format('d M Y H:i'),
+                        'time_until_departure' => Carbon::parse($scheduleRute->schedule_rute_departure_time)->diffForHumans([
                             'syntax' => \Carbon\CarbonInterface::DIFF_ABSOLUTE,
                             'parts' => 2
                         ]),
-                        'status' => Carbon::parse($scheduleRute->departure_time)->isFuture() ? 'AKAN DATANG' : 'SELESAI'
+                        'status' => Carbon::parse($scheduleRute->schedule_rute_departure_time)->isFuture() ? 'AKAN DATANG' : 'SELESAI'
                     ],
                     'passengers' => $scheduleSeats->map(function($seat) {
                         return [
@@ -1521,4 +1521,4 @@ class BookingTransferController extends Controller
             ], 500);
         }
     }
-} 
+}
